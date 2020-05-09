@@ -1,0 +1,6 @@
+*.swp
+*.swo
+wikibookgen
+integration
+.dev.conf
+certs

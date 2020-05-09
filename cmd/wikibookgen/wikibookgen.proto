@@ -1,0 +1,124 @@
+syntax = "proto3";
+
+package wikibookgen;
+
+option go_package = "github.com/proullon/wikibookgen/api";
+
+import "google/api/annotations.proto";
+
+/*
+** GET  /status
+** POST /order
+** GET  /order/{id}
+** GET  /wikibook
+** GET  /wikibook/{id}
+** GET  /wikibook/{id}/download
+*/
+service wikibookgen {
+
+  rpc Status (Void) returns (StatusResponse) {
+    option (google.api.http) ={
+      get: "/status"
+    };  
+  }
+  
+  rpc Order(OrderRequest) returns (OrderResponse) {
+    option (google.api.http) ={
+      post: "/order"
+    };
+  }
+  
+  rpc OrderStatus(OrderStatusRequest) returns (OrderStatusResponse) {
+    option (google.api.http) ={
+      get: "/order/{id}"
+    };
+  }
+  
+  rpc ListWikibook(ListWikibookRequest) returns (ListWikibookResponse) {
+    option (google.api.http) ={
+      get: "/wikibook"
+    };
+  }
+  
+  rpc GetWikibook(GetWikibookRequest) returns (GetWikibookResponse) {
+    option (google.api.http) ={
+      get: "/wikibook/{id}"
+    };
+  }
+  
+  rpc DownloadWikibook(DownloadWikibookRequest) returns (Void) {
+    option (google.api.http) ={
+      get: "/wikibook/{id}/download"
+    };
+  }
+}
+
+message Wikibook {
+  string          uuid = 1;
+  string          subject = 2;
+  string          model = 3;
+  string          title = 4;
+  int64           pages = 5;
+  repeated Volume volumes = 6;
+}
+
+message Volume {
+  string           title = 1;
+  repeated Chapter chapters = 2;
+}
+
+message Chapter {
+  string           title = 1;
+  repeated Page articles = 2;
+}
+
+message Page {
+  int64  id = 1;
+  string title = 2;
+}
+
+message StatusResponse {
+  repeated string status = 1;
+}
+
+message Void {
+}
+
+message OrderRequest {
+  string subject = 1;
+  string model   = 2;
+}
+
+message OrderResponse {
+  string uuid = 1;
+}
+
+message OrderStatusRequest {
+  string uuid = 1;
+}
+
+message OrderStatusResponse {
+  string status = 1;
+  string wikibook_uuid = 2;
+}
+
+message GetWikibookRequest {
+  string uuid = 1;
+}
+
+message GetWikibookResponse {
+  Wikibook wikibook = 1;
+}
+
+message ListWikibookRequest {
+}
+
+message ListWikibookResponse {
+  repeated Wikibook wikibooks = 1;
+}
+
+message DownloadWikibookRequest {
+  string uuid = 1;
+  string format = 2;
+}
+
