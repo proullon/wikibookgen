@@ -3,6 +3,8 @@ package orderer
 import (
 	"database/sql"
 
+	"gonum.org/v1/gonum/graph"
+
 	. "github.com/proullon/wikibookgen/api/model"
 )
 
@@ -18,7 +20,11 @@ func NewV1(db *sql.DB) *V1 {
 	return o
 }
 
-func (o *V1) Order(j Job, root *Vertex, vertices map[int]*Vertex, clusters *Cluster) (*Wikibook, error) {
+func (o *V1) Version() string {
+	return "1"
+}
+
+func (o *V1) Order(j Job, g graph.Directed, clusters *Cluster) (*Wikibook, error) {
 	wikibook := &Wikibook{}
 	return wikibook, nil
 }

@@ -2,9 +2,12 @@ package classifier
 
 import (
 	"sync"
+	//	"time"
 
 	"github.com/proullon/workerpool"
 	log "github.com/sirupsen/logrus"
+	"gonum.org/v1/gonum/graph"
+	"gonum.org/v1/gonum/graph/simple"
 
 	. "github.com/proullon/wikibookgen/api/model"
 )
@@ -18,8 +21,9 @@ type Grapher struct {
 	wp     *workerpool.WorkerPool
 	mu     sync.RWMutex
 
-	vertices map[int]*Vertex
-	root     *Vertex
+	graph    *simple.DirectedGraph
+	vertices map[int64]*Vertex
+	//root     *Vertex
 }
 
 func NewV1(l Loader) (*V1, error) {
@@ -30,40 +34,45 @@ func NewV1(l Loader) (*V1, error) {
 	return c, nil
 }
 
-func (c *V1) LoadGraph(rootID int) (*Vertex, map[int]*Vertex, error) {
+func (c *V1) Version() string {
+	return "1"
+}
+
+func (c *V1) LoadGraph(rootID int64) (graph.Directed, error) {
 	var err error
 
 	l := Grapher{loader: c.loader}
+	l.vertices = make(map[int64]*Vertex)
+	l.graph = simple.NewDirectedGraph()
 
-	l.vertices = make(map[int]*Vertex)
-	l.root, err = l.loadVertex(rootID)
+	root, err := l.loadVertex(rootID)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	trail := make([]int, 1)
+	trail := make([]int64, 1)
 	trail[0] = rootID
 
 	l.wp, err = workerpool.New(l.classify,
 		workerpool.WithRetry(5),
-		workerpool.WithMaxWorker(100),
+		workerpool.WithMaxWorker(200),
 		workerpool.WithEvaluationTime(1),
 		workerpool.WithSizePercentil(workerpool.LogSizesPercentil),
 	)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	for _, id := range l.root.References {
+	for _, id := range root.References {
 		p := &payload{
 			ID:    id,
-			Trail: []int{rootID},
+			Trail: []int64{rootID},
 		}
 		l.wp.Feed(p)
 	}
-	for _, id := range l.root.Referers {
+	for _, id := range root.Referers {
 		p := &payload{
 			ID:    id,
-			Trail: []int{rootID},
+			Trail: []int64{rootID},
 		}
 		l.wp.Feed(p)
 	}
@@ -76,10 +85,10 @@ func (c *V1) LoadGraph(rootID int) (*Vertex, map[int]*Vertex, error) {
 		log.Errorf("%d: %d errors", rootID, r)
 	}
 
-	return l.root, l.vertices, nil
+	return l.graph, nil
 }
 
-func (l *Grapher) loadVertex(id int) (*Vertex, error) {
+func (l *Grapher) loadVertex(id int64) (*Vertex, error) {
 	v := &Vertex{
 		ID:     id,
 		Loaded: true,
@@ -101,8 +110,8 @@ func (l *Grapher) loadVertex(id int) (*Vertex, error) {
 }
 
 type payload struct {
-	ID    int
-	Trail []int
+	ID    int64
+	Trail []int64
 }
 
 // classify func
@@ -119,7 +128,7 @@ func (g *Grapher) classify(_payload interface{}) (interface{}, error) {
 	//log.Infof("Classify %-10d from '%+v' please", id, trail)
 
 	// check if vertex is in vertices map and loaded. If so you are done
-	exist, loaded := g.exist(id)
+	exist, loaded := g.loaded(id)
 	if exist && loaded {
 		log.Debugf("Stop. %d exists and loaded", id)
 		return nil, nil
@@ -139,14 +148,14 @@ func (g *Grapher) classify(_payload interface{}) (interface{}, error) {
 
 	// check if loading node references is pertinent
 	// stop at 2nd degree to avoid infinite loading
-	maxdegree := 2
-	if len(trail) == maxdegree {
+	maxdegree := 1
+	if len(trail) >= maxdegree {
 		//log.Infof("Stop. cause of degree %d", maxdegree)
 		return nil, nil
 	}
 	trail = append(trail, v.ID)
 
-	var tofeed []int
+	var tofeed []int64
 
 	for _, r := range v.References {
 		// stop if id is already in trail, no loop loading
@@ -173,17 +182,21 @@ func (g *Grapher) classify(_payload interface{}) (interface{}, error) {
 	}
 
 	// Feed ref in workerpool
-	go func(trail []int, tofeed []int) {
-		for _, id := range tofeed {
-			p := &payload{
-				ID:    id,
-				Trail: trail,
-			}
-
-			g.wp.Feed(p)
+	//	go func(trail []int64, tofeed []int64) {
+	for _, id := range tofeed {
+		p := &payload{
+			ID:    id,
+			Trail: trail,
 		}
-	}(trail, tofeed)
 
+		g.wp.Feed(p)
+	}
+	/*}(trail, tofeed)
+
+	if len(tofeed) > 1 {
+		time.Sleep(1 * time.Millisecond)
+	}
+	*/
 	return nil, nil
 }
 
@@ -194,27 +207,60 @@ func (g *Grapher) classify(_payload interface{}) (interface{}, error) {
 func (g *Grapher) addToGraph(v *Vertex) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
+	/*
+		for _, refID := range v.References {
+			ref, exist := g.vertices[refID]
+			if !exist {
+				ref = &Vertex{ID: refID}
+				g.vertices[refID] = ref
+			}
 
-	for _, refID := range v.References {
-		ref, exist := g.vertices[refID]
-		if !exist {
-			ref = &Vertex{ID: refID}
-			g.vertices[refID] = ref
+			ref.IncomingEdges = append(ref.IncomingEdges, v)
+			v.OutgoingEdges = append(v.OutgoingEdges, ref)
 		}
 
-		ref.IncomingEdges = append(ref.IncomingEdges, v)
-		v.OutgoingEdges = append(v.OutgoingEdges, ref)
+		for _, refID := range v.Referers {
+			ref, exist := g.vertices[refID]
+			if !exist {
+				ref = &Vertex{ID: refID}
+				g.vertices[refID] = ref
+			}
+
+			ref.OutgoingEdges = append(ref.OutgoingEdges, v)
+			v.IncomingEdges = append(v.IncomingEdges, ref)
+		}
+	*/
+	//log.Infof("NewNode(%d)", v.ID)
+	n := g.graph.Node(v.ID)
+	if n == nil {
+		n = NewNode(v.ID)
+		g.graph.AddNode(n)
+	}
+
+	for _, refID := range v.References {
+		if refID == v.ID {
+			continue // avoid self edge
+		}
+		to := g.graph.Node(refID)
+		if to == nil {
+			to = NewNode(refID)
+			g.graph.AddNode(to)
+		}
+		//log.Infof("NewEdge {%d, %d}", n.ID(), to.ID())
+		g.graph.SetEdge(g.graph.NewEdge(n, to))
 	}
 
 	for _, refID := range v.Referers {
-		ref, exist := g.vertices[refID]
-		if !exist {
-			ref = &Vertex{ID: refID}
-			g.vertices[refID] = ref
+		if refID == v.ID {
+			continue // avoid self edge
 		}
-
-		ref.OutgoingEdges = append(ref.OutgoingEdges, v)
-		v.IncomingEdges = append(v.IncomingEdges, ref)
+		from := g.graph.Node(refID)
+		if from == nil {
+			from = NewNode(refID)
+			g.graph.AddNode(from)
+		}
+		//log.Infof("NewEdge {%d, %d}", from.ID(), n.ID())
+		g.graph.SetEdge(g.graph.NewEdge(from, n))
 	}
 }
 
@@ -225,26 +271,28 @@ func (g *Grapher) addToMap(v *Vertex) *Vertex {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
-	original, exist := g.vertices[v.ID]
-	if exist {
-		original.Loaded = true
-		original.References = original.References
-		original.Referers = v.Referers
-		return original
-	}
+	/*
+		original, exist := g.vertices[v.ID]
+		if exist {
+			original.Loaded = true
+			original.References = original.References
+			original.Referers = v.Referers
+			return original
+		}
 
+	*/
 	g.vertices[v.ID] = v
 	return v
 }
 
-func (g *Grapher) exist(id int) (exist, loaded bool) {
+func (g *Grapher) loaded(id int64) (exist, loaded bool) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
-	v, exist := g.vertices[id]
+	_, exist = g.vertices[id]
 	if !exist {
 		return false, false
 	}
 
-	return exist, v.Loaded
+	return exist, true
 }

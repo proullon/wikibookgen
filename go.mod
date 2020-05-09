@@ -5,10 +5,9 @@ go 1.13
 require (
 	github.com/gorilla/mux v1.7.4
 	github.com/lib/pq v1.4.0
-	github.com/proullon/graph v0.0.0-00010101000000-000000000000
-	github.com/proullon/workerpool v0.0.0-20200429190315-8cc98e318cde
+	github.com/proullon/workerpool v0.0.0-20200509122220-8d2743420128
 	github.com/sirupsen/logrus v1.5.0
 	github.com/urfave/cli v1.22.4
+	golang.org/x/exp v0.0.0-20190125153040-c74c464bbbf2
+	gonum.org/v1/gonum v0.7.0
 )
-
-replace github.com/proullon/graph => ../graph

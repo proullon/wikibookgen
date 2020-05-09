@@ -1,9 +1,9 @@
 package model
 
 import (
-//"fmt"
+	"fmt"
 
-//"github.com/proullon/graph"
+	"gonum.org/v1/gonum/graph"
 )
 
 /*
@@ -33,28 +33,31 @@ type Generator interface {
 // Loader defines objects able to retrieve article references
 // Production implementation use database, redis, unit test local file
 type Loader interface {
-	LoadIncomingReferences(int) ([]int, error)
-	LoadOutgoingReferences(int) ([]int, error)
+	LoadIncomingReferences(int64) ([]int64, error)
+	LoadOutgoingReferences(int64) ([]int64, error)
 }
 
 // Classifier interface defines objects able to select
 // a coherent graph of Wikipedia articles related to
 // given job constraints
 type Classifier interface {
-	LoadGraph(int) (*Vertex, map[int]*Vertex, error)
+	LoadGraph(int64) (graph.Directed, error)
+	Version() string
 }
 
 // Clusterer interface defines objects able to group
 // Wikipedia articles graph into a 1 dimension storyline (chapters)
 type Clusterer interface {
-	Cluster(Job, *Vertex, map[int]*Vertex) (*Cluster, error)
+	Cluster(Job, graph.Directed) (*Cluster, error)
+	Version() string
 }
 
 // Orderer interface defines objects able to order
 // clusters (chapters) and Wikipedia articles inside cluster
 // in coherent reading order
 type Orderer interface {
-	Order(Job, *Vertex, map[int]*Vertex, *Cluster) (*Wikibook, error)
+	Order(Job, graph.Directed, *Cluster) (*Wikibook, error)
+	Version() string
 }
 
 type JobStatus string
@@ -79,6 +82,27 @@ const (
 	ENCYCLOPEDIA Model = "encyclopedia"
 )
 
+type Node struct {
+	id int64
+}
+
+func (n *Node) ID() int64 {
+	return n.id
+}
+
+func (n *Node) String() string {
+	return fmt.Sprintf("%d", n.id)
+}
+
+func NewNode(id int64) *Node {
+	n := &Node{
+		id: id,
+	}
+
+	return n
+}
+
+/*
 type Graph struct {
 	root     *Vertex
 	vertices map[int]*Vertex
@@ -114,7 +138,7 @@ func (g *Graph) Vertices() []*Vertex {
 
 	return vertices
 }
-
+*/
 /*
 
 func (g *Graph) Duplicate() graph.Graph {
@@ -173,10 +197,10 @@ type Edge struct {
 */
 
 type Vertex struct {
-	ID            int
+	ID            int64
 	Loaded        bool
-	References    []int
-	Referers      []int
+	References    []int64
+	Referers      []int64
 	IncomingEdges []*Vertex `json:"-"`
 	OutgoingEdges []*Vertex `json:"-"`
 }

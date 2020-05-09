@@ -58,12 +58,12 @@ func (g *V1) generate(j Job) error {
 	}
 
 	begin := time.Now()
-	graph, articles, err := g.classifier.LoadGraph(id)
+	graph, err := g.classifier.LoadGraph(id)
 	if err != nil {
 		return err
 	}
 	classificationDuration := time.Since(begin)
-	log.Infof("%+v: %d articles", j, len(articles))
+	log.Infof("%+v: %d articles", j, graph.Nodes().Len())
 	//stat(graph, articles)
 
 	/*
@@ -75,14 +75,14 @@ func (g *V1) generate(j Job) error {
 	*/
 
 	begin = time.Now()
-	clusters, err := g.clusterer.Cluster(j, graph, articles)
+	clusters, err := g.clusterer.Cluster(j, graph)
 	if err != nil {
 		return err
 	}
 	clusteringDuration := time.Since(begin)
 
 	begin = time.Now()
-	wikibook, err := g.orderer.Order(j, graph, articles, clusters)
+	wikibook, err := g.orderer.Order(j, graph, clusters)
 	if err != nil {
 		return err
 	}
@@ -140,10 +140,10 @@ func (g *V1) insertWikibook(j Job, wikibook *Wikibook) error {
 	return nil
 }
 
-func (g *V1) loadID(s string) (int, error) {
+func (g *V1) loadID(s string) (int64, error) {
 	query := `SELECT page_id FROM page WHERE lower_title = $1`
 
-	var id int
+	var id int64
 	err := g.db.QueryRow(query, parsing.CleanupTitle(s)).Scan(&id)
 	return id, err
 }

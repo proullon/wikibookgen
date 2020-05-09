@@ -8,17 +8,17 @@ import (
 
 type LocalCacheLoader struct {
 	src      Loader
-	incoming map[int][]int
+	incoming map[int64][]int64
 	incm     sync.Mutex
-	outgoing map[int][]int
+	outgoing map[int64][]int64
 	outm     sync.Mutex
 }
 
 func NewLocalCacheLoader(src Loader) *LocalCacheLoader {
 	l := &LocalCacheLoader{
 		src:      src,
-		incoming: make(map[int][]int),
-		outgoing: make(map[int][]int),
+		incoming: make(map[int64][]int64),
+		outgoing: make(map[int64][]int64),
 	}
 
 	return l
@@ -31,7 +31,7 @@ func (l *LocalCacheLoader) Cached() int {
 	return n
 }
 
-func (l *LocalCacheLoader) LoadIncomingReferences(id int) ([]int, error) {
+func (l *LocalCacheLoader) LoadIncomingReferences(id int64) ([]int64, error) {
 	l.incm.Lock()
 	refs, ok := l.incoming[id]
 	l.incm.Unlock()
@@ -51,7 +51,7 @@ func (l *LocalCacheLoader) LoadIncomingReferences(id int) ([]int, error) {
 	return refs, nil
 }
 
-func (l *LocalCacheLoader) LoadOutgoingReferences(id int) ([]int, error) {
+func (l *LocalCacheLoader) LoadOutgoingReferences(id int64) ([]int64, error) {
 	l.outm.Lock()
 	refs, ok := l.outgoing[id]
 	l.outm.Unlock()
