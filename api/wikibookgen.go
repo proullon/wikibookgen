@@ -8,7 +8,6 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	. "github.com/proullon/wikibookgen/api/model"
-	"github.com/proullon/wikibookgen/pkg/parsing"
 )
 
 type WikibookGen struct {
@@ -72,9 +71,9 @@ func (wg *WikibookGen) jobRoutine() {
 	wg.gen.Generate(j)
 }
 
-func (wg *WikibookGen) QueueGenerationJob(subject, model string) (string, error) {
+func (wg *WikibookGen) QueueGenerationJob(subject, model, lang string) (string, error) {
 
-	err := wg.ValidateSubject(subject)
+	err := wg.ValidateSubject(subject, lang)
 	if err != nil {
 		return "", err
 	}
@@ -102,11 +101,12 @@ func (wg *WikibookGen) ValidateModel(s string) error {
 	}
 }
 
-func (wg *WikibookGen) ValidateSubject(s string) error {
-	query := `SELECT page_id FROM page WHERE lower_title = $1`
-
-	var id int
-	return wg.db.QueryRow(query, parsing.CleanupTitle(s)).Scan(&id)
+func (wg *WikibookGen) ValidateSubject(s string, lang string) error {
+	_, err := wg.gen.Find(s, lang)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (wg *WikibookGen) LoadOrder(uuid string) (string, string, error) {

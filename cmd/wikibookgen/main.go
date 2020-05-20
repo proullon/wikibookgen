@@ -11,12 +11,14 @@ import (
 	"github.com/urfave/cli"
 
 	"github.com/proullon/wikibookgen/api"
-	//"github.com/proullon/wikibookgen/pkg/cache"
+	"github.com/proullon/wikibookgen/pkg/cache"
 	"github.com/proullon/wikibookgen/pkg/classifier"
 	"github.com/proullon/wikibookgen/pkg/clusterer"
 	"github.com/proullon/wikibookgen/pkg/generator"
 	"github.com/proullon/wikibookgen/pkg/loader"
 	"github.com/proullon/wikibookgen/pkg/orderer"
+
+	. "github.com/proullon/wikibookgen/api/model"
 )
 
 func main() {
@@ -33,6 +35,18 @@ func main() {
 			Value:  "wikipedia",
 			Usage:  "Database name",
 			EnvVar: "DB_NAME",
+		},
+		cli.StringFlag{
+			Name:   "dumpdb-fr",
+			Value:  "wikipedia_fr",
+			Usage:  "Database name",
+			EnvVar: "DUMP_DB_FR",
+		},
+		cli.StringFlag{
+			Name:   "dumpdb-en",
+			Value:  "wikipedia_en",
+			Usage:  "Database name",
+			EnvVar: "DUMP_DB_EN",
 		},
 		cli.StringFlag{
 			Name:   "user",
@@ -85,6 +99,57 @@ func start(c *cli.Context) error {
 	sslRootCert := c.String("ssl-root-cert")
 	sslClientKey := c.String("ssl-client-key")
 	sslClientCert := c.String("ssl-client-cert")
+	maxconn := c.Int("db-max-conn")
+
+	db, err := openDB(host, dbname, usr, sslRootCert, sslClientCert, sslClientKey, maxconn)
+	if err != nil {
+		log.Errorf("OpenDB %s: %s", dbname, err)
+	}
+	dbfr, err := openDB(host, c.String("dumpdb-fr"), usr, sslRootCert, sslClientCert, sslClientKey, maxconn)
+	if err != nil {
+		log.Errorf("OpenDB %s: %s", c.String("dumpdb-fr"), err)
+	}
+	dben, err := openDB(host, c.String("dumpdb-en"), usr, sslRootCert, sslClientCert, sslClientKey, maxconn)
+	if err != nil {
+		log.Errorf("OpenDB %s: %s", c.String("dumpdb-en"), err)
+	}
+
+	if c.String("logfile") != "" {
+		f, err := os.OpenFile(c.String("logfile"), os.O_WRONLY|os.O_CREATE, 0755)
+		if err != nil {
+			return fmt.Errorf("log: %s", err)
+		}
+		log.SetOutput(f)
+	}
+
+	loadermap := make(map[string]Loader)
+
+	dbloader := loader.NewDBLoader(dbfr)
+	cacheloader := cache.NewLocalCacheLoader(dbloader)
+	loadermap["fr"] = cacheloader
+
+	dbloader = loader.NewDBLoader(dben)
+	cacheloader = cache.NewLocalCacheLoader(dbloader)
+	loadermap["en"] = cacheloader
+
+	// TODO: classifier should havve loader as LoadGraph argument
+	cla, err := classifier.NewV1(loadermap["fr"])
+	if err != nil {
+		return fmt.Errorf("classifier.NewV1: %s", err)
+	}
+
+	gen := generator.NewV1(db, cla, clusterer.NewV1(), orderer.NewV1(db), loadermap)
+	wg := wikibookgen.New(db, gen)
+
+	ctx := context.WithValue(context.Background(), "wg", wg)
+	err = wikibookgen.ListenAndServe(ctx, "8080")
+	if err != nil {
+		return fmt.Errorf("ListenAndServe: %s", err)
+	}
+	return nil
+}
+
+func openDB(host, dbname, usr, sslRootCert, sslClientCert, sslClientKey string, maxconn int) (*sql.DB, error) {
 
 	dsn := fmt.Sprintf("postgresql://%s@%s:26257/%s?ssl=true&sslmode=require&sslrootcert=%s&sslkey=%s&sslcert=%s",
 		usr,
@@ -97,47 +162,15 @@ func start(c *cli.Context) error {
 
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("sql.Open: %s", err)
 	}
 	err = db.Ping()
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("db.Ping: %s", err)
 	}
-	db.SetMaxOpenConns(c.Int("db-max-conn"))
-	db.SetMaxIdleConns(c.Int("db-max-conn"))
-	log.Infof("Connected to %s/%s\n", host, dbname)
+	db.SetMaxOpenConns(maxconn)
+	db.SetMaxIdleConns(maxconn)
 
-	if c.String("logfile") != "" {
-		f, err := os.OpenFile(c.String("logfile"), os.O_WRONLY|os.O_CREATE, 0755)
-		if err != nil {
-			return err
-		}
-		log.SetOutput(f)
-	}
-
-	/*
-		dbloader := cache.NewDBLoader(db)
-		cacheloader := cache.NewLocalCacheLoader(dbloader)
-
-		cla, err := classifier.NewV1(cacheloader)
-	*/
-	loader, err := loader.NewFileLoader("/data/mathematiques.json")
-	if err != nil {
-		return err
-	}
-
-	cla, err := classifier.NewV1(loader)
-	if err != nil {
-		return err
-	}
-
-	gen := generator.NewV1(db, cla, clusterer.NewV1(), orderer.NewV1(db))
-	wg := wikibookgen.New(db, gen)
-
-	ctx := context.WithValue(context.Background(), "wg", wg)
-	err = wikibookgen.ListenAndServe(ctx, "8080")
-	if err != nil {
-		return err
-	}
-	return nil
+	log.Infof("Connected to %s/%s", host, dbname)
+	return db, nil
 }

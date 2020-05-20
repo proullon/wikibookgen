@@ -28,6 +28,7 @@ type Chapter struct {
 // a Wikibook table of content given job constraints
 type Generator interface {
 	Generate(Job)
+	Find(string, string) (int64, error)
 }
 
 // Loader defines objects able to retrieve article references
@@ -35,20 +36,22 @@ type Generator interface {
 type Loader interface {
 	LoadIncomingReferences(int64) ([]int64, error)
 	LoadOutgoingReferences(int64) ([]int64, error)
+	ID(string) (int64, error)
 }
 
 // Classifier interface defines objects able to select
 // a coherent graph of Wikipedia articles related to
 // given job constraints
 type Classifier interface {
-	LoadGraph(int64) (graph.Directed, error)
+	LoadGraph(rootID int64, maxSize int64) (graph.Directed, error)
 	Version() string
 }
 
 // Clusterer interface defines objects able to group
 // Wikipedia articles graph into a 1 dimension storyline (chapters)
 type Clusterer interface {
-	Cluster(Job, graph.Directed) (*Cluster, error)
+	Cluster(Job, int64, graph.Directed) (*Cluster, error)
+	MaxSize(Job) int64
 	Version() string
 }
 
@@ -254,6 +257,24 @@ type Cluster struct {
 	IncomingEdges []*Vertex `json:"-"`
 	OutgoingEdges []*Vertex `json:"-"`
 
-	Members     []*Vertex
+	Members     []graph.Node
 	Subclusters []*Cluster
+}
+
+func (c *Cluster) Depth() int {
+	return c.depth(c, 1)
+}
+
+func (c *Cluster) depth(cl *Cluster, depth int) int {
+	fmt.Printf("Cluster d%d : %v\n", depth, cl.Members)
+
+	var max int = depth
+	for _, sub := range cl.Subclusters {
+		d := c.depth(sub, depth+1)
+		if d > max {
+			max = d
+		}
+	}
+
+	return max
 }

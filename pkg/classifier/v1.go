@@ -2,7 +2,6 @@ package classifier
 
 import (
 	"sync"
-	//	"time"
 
 	"github.com/proullon/workerpool"
 	log "github.com/sirupsen/logrus"
@@ -17,9 +16,10 @@ type V1 struct {
 }
 
 type Grapher struct {
-	loader Loader
-	wp     *workerpool.WorkerPool
-	mu     sync.RWMutex
+	loader  Loader
+	wp      *workerpool.WorkerPool
+	mu      sync.RWMutex
+	maxsize int64
 
 	graph    *simple.DirectedGraph
 	vertices map[int64]*Vertex
@@ -38,10 +38,10 @@ func (c *V1) Version() string {
 	return "1"
 }
 
-func (c *V1) LoadGraph(rootID int64) (graph.Directed, error) {
+func (c *V1) LoadGraph(rootID int64, maxSize int64) (graph.Directed, error) {
 	var err error
 
-	l := Grapher{loader: c.loader}
+	l := Grapher{loader: c.loader, maxsize: maxSize}
 	l.vertices = make(map[int64]*Vertex)
 	l.graph = simple.NewDirectedGraph()
 
@@ -127,6 +127,11 @@ func (g *Grapher) classify(_payload interface{}) (interface{}, error) {
 	trail := p.Trail
 	//log.Infof("Classify %-10d from '%+v' please", id, trail)
 
+	if g.maxsize > 0 && g.Size() >= g.maxsize {
+		log.Debugf("MaxSize %d reached, ignoring %d", g.maxsize, id)
+		return nil, nil
+	}
+
 	// check if vertex is in vertices map and loaded. If so you are done
 	exist, loaded := g.loaded(id)
 	if exist && loaded {
@@ -148,7 +153,7 @@ func (g *Grapher) classify(_payload interface{}) (interface{}, error) {
 
 	// check if loading node references is pertinent
 	// stop at 2nd degree to avoid infinite loading
-	maxdegree := 1
+	maxdegree := 2
 	if len(trail) >= maxdegree {
 		//log.Infof("Stop. cause of degree %d", maxdegree)
 		return nil, nil
@@ -161,7 +166,7 @@ func (g *Grapher) classify(_payload interface{}) (interface{}, error) {
 		// stop if id is already in trail, no loop loading
 		for _, t := range trail {
 			if t == r {
-				log.Infof("Ignoring %d cause loop detected in trail %+v", t, trail)
+				log.Debugf("Ignoring %d cause loop detected in trail %+v", t, trail)
 				continue
 			}
 
@@ -173,7 +178,7 @@ func (g *Grapher) classify(_payload interface{}) (interface{}, error) {
 		// stop if id is already in trail, no loop loading
 		for _, t := range trail {
 			if t == r {
-				log.Infof("Ignoring %d cause loop detected in trail %+v", t, trail)
+				log.Debugf("Ignoring %d cause loop detected in trail %+v", t, trail)
 				continue
 			}
 
@@ -198,6 +203,13 @@ func (g *Grapher) classify(_payload interface{}) (interface{}, error) {
 	}
 	*/
 	return nil, nil
+}
+
+func (g *Grapher) Size() int64 {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	n := g.graph.Nodes().Len()
+	return int64(n)
 }
 
 // addToGraph needs to go through all references and referers, try to find them in vertices map
@@ -231,22 +243,18 @@ func (g *Grapher) addToGraph(v *Vertex) {
 		}
 	*/
 	//log.Infof("NewNode(%d)", v.ID)
-	n := g.graph.Node(v.ID)
-	if n == nil {
-		n = NewNode(v.ID)
-		g.graph.AddNode(n)
-	}
+	n := g.getOrNew(v.ID)
 
 	for _, refID := range v.References {
 		if refID == v.ID {
 			continue // avoid self edge
 		}
-		to := g.graph.Node(refID)
-		if to == nil {
-			to = NewNode(refID)
-			g.graph.AddNode(to)
+		if g.maxsize > 0 && int64(g.graph.Nodes().Len()) >= g.maxsize {
+			return
 		}
-		//log.Infof("NewEdge {%d, %d}", n.ID(), to.ID())
+
+		to := g.getOrNew(refID)
+		log.Debugf("NewEdge {%d, %d}", n.ID(), to.ID())
 		g.graph.SetEdge(g.graph.NewEdge(n, to))
 	}
 
@@ -254,14 +262,24 @@ func (g *Grapher) addToGraph(v *Vertex) {
 		if refID == v.ID {
 			continue // avoid self edge
 		}
-		from := g.graph.Node(refID)
-		if from == nil {
-			from = NewNode(refID)
-			g.graph.AddNode(from)
+		if g.maxsize > 0 && int64(g.graph.Nodes().Len()) >= g.maxsize {
+			return
 		}
-		//log.Infof("NewEdge {%d, %d}", from.ID(), n.ID())
+		from := g.getOrNew(refID)
+		log.Debugf("NewEdge {%d, %d}", from.ID(), n.ID())
 		g.graph.SetEdge(g.graph.NewEdge(from, n))
 	}
+}
+
+func (g *Grapher) getOrNew(id int64) graph.Node {
+
+	n := g.graph.Node(id)
+	if n == nil {
+		n = NewNode(id)
+		g.graph.AddNode(n)
+	}
+
+	return n
 }
 
 // add to map, but if unloaded instance already exist,

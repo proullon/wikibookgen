@@ -5,7 +5,7 @@ go 1.13
 require (
 	github.com/gorilla/mux v1.7.4
 	github.com/lib/pq v1.4.0
-	github.com/proullon/workerpool v0.0.0-20200509122220-8d2743420128
+	github.com/proullon/workerpool v0.0.0-20200514132344-3e091d52d168
 	github.com/sirupsen/logrus v1.5.0
 	github.com/urfave/cli v1.22.4
 	golang.org/x/exp v0.0.0-20190125153040-c74c464bbbf2

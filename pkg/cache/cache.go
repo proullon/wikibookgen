@@ -1,39 +1,52 @@
 package cache
 
 import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"sync"
+	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	. "github.com/proullon/wikibookgen/api/model"
 )
 
 type LocalCacheLoader struct {
 	src      Loader
-	incoming map[int64][]int64
+	Incoming map[int64][]int64
 	incm     sync.Mutex
-	outgoing map[int64][]int64
+	Outgoing map[int64][]int64
 	outm     sync.Mutex
 }
 
 func NewLocalCacheLoader(src Loader) *LocalCacheLoader {
 	l := &LocalCacheLoader{
 		src:      src,
-		incoming: make(map[int64][]int64),
-		outgoing: make(map[int64][]int64),
+		Incoming: make(map[int64][]int64),
+		Outgoing: make(map[int64][]int64),
 	}
+
+	go func() {
+		for {
+			time.Sleep(10 * time.Second)
+			l.Dump()
+		}
+	}()
 
 	return l
 }
 
 func (l *LocalCacheLoader) Cached() int {
 	l.incm.Lock()
-	n := len(l.incoming)
+	n := len(l.Incoming)
 	l.incm.Unlock()
 	return n
 }
 
 func (l *LocalCacheLoader) LoadIncomingReferences(id int64) ([]int64, error) {
 	l.incm.Lock()
-	refs, ok := l.incoming[id]
+	refs, ok := l.Incoming[id]
 	l.incm.Unlock()
 	if ok {
 		return refs, nil
@@ -45,7 +58,7 @@ func (l *LocalCacheLoader) LoadIncomingReferences(id int64) ([]int64, error) {
 	}
 
 	l.incm.Lock()
-	l.incoming[id] = refs
+	l.Incoming[id] = refs
 	l.incm.Unlock()
 
 	return refs, nil
@@ -53,7 +66,7 @@ func (l *LocalCacheLoader) LoadIncomingReferences(id int64) ([]int64, error) {
 
 func (l *LocalCacheLoader) LoadOutgoingReferences(id int64) ([]int64, error) {
 	l.outm.Lock()
-	refs, ok := l.outgoing[id]
+	refs, ok := l.Outgoing[id]
 	l.outm.Unlock()
 	if ok {
 		return refs, nil
@@ -65,50 +78,31 @@ func (l *LocalCacheLoader) LoadOutgoingReferences(id int64) ([]int64, error) {
 	}
 
 	l.outm.Lock()
-	l.outgoing[id] = refs
+	l.Outgoing[id] = refs
 	l.outm.Unlock()
 
 	return refs, nil
 }
 
-/*
-func GetPage(db *sql.DB, lt string) (*Page, error) {
-	indexm.Lock()
-	if pageIndex == nil {
-		pageIndex = make(map[string]*Page)
-	}
-	p, ok := pageIndex[lt]
-	indexm.Unlock()
-	if ok {
-		hit++
-		return p, nil
-	}
+func (l *LocalCacheLoader) Dump() {
+	l.outm.Lock()
+	l.incm.Lock()
+	defer l.outm.Unlock()
+	defer log.Infof("LocalCache Dump created")
+	defer l.incm.Unlock()
 
-	p = &Page{LowerTitle: lt}
-	query := `SELECT page.page_id, ar.refered_page, ar.occurrence, ar.reference_index, p.lower_title
-						FROM page
-						JOIN article_reference AS ar ON page.page_id = ar.page_id
-						JOIN page AS p ON p.page_id = ar.refered_page
-						WHERE page.lower_title = $1`
-	rows, err := db.Query(query, lt)
+	data, err := json.Marshal(l)
 	if err != nil {
-		return nil, err
+		log.Errorf("Cannot marshal LocalCacheLoader: %s", err)
+		return
 	}
-	defer rows.Close()
-
-	for rows.Next() {
-		r := &Reference{}
-		err = rows.Scan(&r.PageID, &r.ReferedPage, &r.Occurence, &r.Index, &r.LowerTitle)
-		if err != nil {
-			return nil, err
-		}
-		p.ID = r.PageID
-		p.References = append(p.References, r)
+	err = ioutil.WriteFile(fmt.Sprintf("/tmp/wikibookgen/dump.%p.json", l), data, 0666)
+	if err != nil {
+		log.Errorf("cannot write LocalCacheLoader: %s", err)
+		return
 	}
-
-	indexm.Lock()
-	pageIndex[lt] = p
-	indexm.Unlock()
-	return p, nil
 }
-*/
+
+func (l *LocalCacheLoader) ID(s string) (int64, error) {
+	return l.src.ID(s)
+}

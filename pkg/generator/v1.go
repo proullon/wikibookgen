@@ -3,31 +3,32 @@ package generator
 import (
 	"database/sql"
 	"encoding/json"
-	//	"fmt"
+	"fmt"
 	"time"
 
 	log "github.com/sirupsen/logrus"
 
 	. "github.com/proullon/wikibookgen/api/model"
-	"github.com/proullon/wikibookgen/pkg/parsing"
 )
 
 type V1 struct {
 	version string
 	db      *sql.DB
 
+	loaders    map[string]Loader
 	classifier Classifier
 	clusterer  Clusterer
 	orderer    Orderer
 }
 
-func NewV1(db *sql.DB, classifier Classifier, clusterer Clusterer, orderer Orderer) *V1 {
+func NewV1(db *sql.DB, classifier Classifier, clusterer Clusterer, orderer Orderer, loaders map[string]Loader) *V1 {
 	g := &V1{
 		version:    "1",
 		db:         db,
 		classifier: classifier,
 		clusterer:  clusterer,
 		orderer:    orderer,
+		loaders:    loaders,
 	}
 
 	return g
@@ -52,30 +53,21 @@ func (g *V1) Generate(j Job) {
 }
 
 func (g *V1) generate(j Job) error {
-	id, err := g.loadID(j.Subject)
+	id, err := g.Find(j.Subject, "fr")
 	if err != nil {
 		return err
 	}
 
 	begin := time.Now()
-	graph, err := g.classifier.LoadGraph(id)
+	graph, err := g.classifier.LoadGraph(id, g.clusterer.MaxSize(j))
 	if err != nil {
 		return err
 	}
 	classificationDuration := time.Since(begin)
 	log.Infof("%+v: %d articles", j, graph.Nodes().Len())
-	//stat(graph, articles)
-
-	/*
-		data, err := json.Marshal(articles)
-		if err != nil {
-			return err
-		}
-		fmt.Printf("\n%s\n", string(data))
-	*/
 
 	begin = time.Now()
-	clusters, err := g.clusterer.Cluster(j, graph)
+	clusters, err := g.clusterer.Cluster(j, id, graph)
 	if err != nil {
 		return err
 	}
@@ -101,7 +93,7 @@ func (g *V1) generate(j Job) error {
 }
 
 func (g *V1) Version() string {
-	return g.version // todo concat version of classifier, clusterer and orderer
+	return fmt.Sprintf("%s-%s-%s", g.version, g.classifier.Version(), g.clusterer.Version())
 }
 
 // insertWikibook insertWikibook inserts newly generated wikibook and
@@ -140,21 +132,11 @@ func (g *V1) insertWikibook(j Job, wikibook *Wikibook) error {
 	return nil
 }
 
-func (g *V1) loadID(s string) (int64, error) {
-	query := `SELECT page_id FROM page WHERE lower_title = $1`
-
-	var id int64
-	err := g.db.QueryRow(query, parsing.CleanupTitle(s)).Scan(&id)
-	return id, err
-}
-
-func stat(graph *Vertex, vertices map[int]*Vertex) {
-
-	var inedge, outedge int
-	for _, v := range vertices {
-		inedge += len(v.IncomingEdges)
-		outedge += len(v.OutgoingEdges)
+func (g *V1) Find(s string, lang string) (int64, error) {
+	l, ok := g.loaders[lang]
+	if !ok {
+		return 0, fmt.Errorf("no loader available for lang '%s'", lang)
 	}
 
-	log.Printf("%d vertices, %d incoming edges, %d outgoing edges", len(vertices), inedge, outedge)
+	return l.ID(s)
 }

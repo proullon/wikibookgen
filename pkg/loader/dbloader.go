@@ -2,6 +2,8 @@ package loader
 
 import (
 	"database/sql"
+
+	"github.com/proullon/wikibookgen/pkg/parsing"
 )
 
 type DBLoader struct {
@@ -16,8 +18,8 @@ func NewDBLoader(db *sql.DB) *DBLoader {
 	return l
 }
 
-func (l *DBLoader) LoadIncomingReferences(id int) ([]int, error) {
-	refs := make([]int, 0)
+func (l *DBLoader) LoadIncomingReferences(id int64) ([]int64, error) {
+	refs := make([]int64, 0)
 
 	// WIP no index right now
 	//return refs, nil
@@ -29,7 +31,7 @@ func (l *DBLoader) LoadIncomingReferences(id int) ([]int, error) {
 	}
 	defer rows.Close()
 
-	var ref int
+	var ref int64
 	for rows.Next() {
 		err = rows.Scan(&ref)
 		if err != nil {
@@ -41,7 +43,7 @@ func (l *DBLoader) LoadIncomingReferences(id int) ([]int, error) {
 	return refs, nil
 }
 
-func (l *DBLoader) LoadOutgoingReferences(id int) ([]int, error) {
+func (l *DBLoader) LoadOutgoingReferences(id int64) ([]int64, error) {
 	query := `SELECT refered_page FROM article_reference WHERE page_id = $1`
 	rows, err := l.db.Query(query, id)
 	if err != nil {
@@ -49,8 +51,8 @@ func (l *DBLoader) LoadOutgoingReferences(id int) ([]int, error) {
 	}
 	defer rows.Close()
 
-	var refs []int
-	var ref int
+	var refs []int64
+	var ref int64
 	for rows.Next() {
 		err = rows.Scan(&ref)
 		if err != nil {
@@ -60,4 +62,12 @@ func (l *DBLoader) LoadOutgoingReferences(id int) ([]int, error) {
 	}
 
 	return refs, nil
+}
+
+func (l *DBLoader) ID(s string) (int64, error) {
+	query := `SELECT page_id FROM page WHERE lower_title = $1`
+
+	var id int64
+	err := l.db.QueryRow(query, parsing.CleanupTitle(s)).Scan(&id)
+	return id, err
 }
