@@ -50,8 +50,6 @@ WORKDIR /cmd
 # Import SQL migration files
 COPY sql /cmd/sql
 
-COPY mathematiques.json /data/mathematiques.json
-
 # Declare the port on which the webserver will be exposed.
 # As we're going to run the executable as an unprivileged user, we can't bind
 # to ports below 1024.

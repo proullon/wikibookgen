@@ -40,7 +40,7 @@ func (c *V1) Cluster(j Job, rootID int64, g graph.Directed) (*Cluster, error) {
 		maxtime = 2 * time.Minute
 	case TOUR:
 		layer = 2
-		maxtime = 15 * time.Minute
+		maxtime = 600 * time.Minute
 	case ENCYCLOPEDIA:
 		layer = 3
 		maxtime = 120 * time.Minute
@@ -131,13 +131,12 @@ func (c *V1) Cluster(j Job, rootID int64, g graph.Directed) (*Cluster, error) {
 	}
 
 	cluster.Members = make(Component)
-	var printed int
+	var chaptercount, pagecount int
 	if layer >= 2 {
-		printed = 0
-		for i := maxidx; i > 0; i-- {
+		for i := maxidx; i > 2; i-- {
 			components := componentmap[i]
 			for _, component := range components {
-				if printed > 50 {
+				if pagecount > 1000 || chaptercount > 50 {
 					break
 				}
 				for id, n := range component {
@@ -145,7 +144,8 @@ func (c *V1) Cluster(j Job, rootID int64, g graph.Directed) (*Cluster, error) {
 				}
 				s := &Cluster{Members: component}
 				cluster.Subclusters = append(cluster.Subclusters, s)
-				printed++
+				pagecount += len(component)
+				chaptercount++
 			}
 		}
 	}
@@ -158,20 +158,29 @@ func (c *V1) findcomponents(g graph.Directed, root graph.Node, maxtime time.Dura
 	var maxidx int
 
 	componentmap := make(map[int][]Component)
+	forbidden := make(map[int64]bool)
 
 	neighbours := createNeighboursPool(g, []graph.Node{root})
 	neighbours = prepareNodePool(g, neighbours, 3)
 
-	maxtime = maxtime / time.Duration(len(neighbours))
+	/*
+		for _, n := range neighbours {
+			forbidden[n.ID()] = true
+		}
+	*/
+	allocated := maxtime / time.Duration(len(neighbours))
 
 	for _, n := range neighbours {
 		cm := make(Component)
 		cm[root.ID()] = root
 		cm[n.ID()] = n
-		//log.Infof("You got %s to find biggest component from %v", maxtime, cm)
+		log.Infof("You got %s to find biggest component from %v", maxtime, cm)
 		begin := time.Now()
-		component := c.Biggest(time.Now().Add(maxtime), g, cm, n)
+		component := c.Biggest(time.Now().Add(allocated), g, cm, n, forbidden)
 		log.Infof("Got %v from %v after %s", component, cm, time.Since(begin))
+		for id, _ := range component {
+			forbidden[id] = true
+		}
 		l := len(component)
 		if l > maxidx {
 			maxidx = l
@@ -182,7 +191,7 @@ func (c *V1) findcomponents(g graph.Directed, root graph.Node, maxtime time.Dura
 	return componentmap, maxidx, nil
 }
 
-func (c *V1) Biggest(timeout time.Time, g graph.Directed, roots Component, last graph.Node) Component {
+func (c *V1) Biggest(timeout time.Time, g graph.Directed, roots Component, last graph.Node, forbidden map[int64]bool) Component {
 	var biggest Component
 	biggest = roots
 
@@ -200,10 +209,13 @@ func (c *V1) Biggest(timeout time.Time, g graph.Directed, roots Component, last 
 	//timeleft := time.Until(timeout)
 	//maxtime := timeleft / time.Duration(len(neighbours))
 	//log.Infof("%s until timeout. You got %s to find biggest component from  %v", timeleft, maxtime, roots)
-	//log.Infof("%s to find biggest component from %v", timeleft, roots)
+	log.Infof("%s to find biggest component from %v", time.Until(timeout), roots)
 
 	for _, n := range neighbours {
 		if _, exists := roots[n.ID()]; exists {
+			continue
+		}
+		if _, exists := forbidden[n.ID()]; exists {
 			continue
 		}
 		/*
@@ -223,7 +235,7 @@ func (c *V1) Biggest(timeout time.Time, g graph.Directed, roots Component, last 
 			continue
 		}
 
-		c := c.Biggest(timeout, g, r2, n)
+		c := c.Biggest(timeout, g, r2, n, forbidden)
 		if len(c) > len(biggest) {
 			biggest = c
 		}
@@ -376,12 +388,12 @@ func removeDuplicateInClusters(componentmap map[int][]Component, maxidx int) (ma
 				}
 			}
 			l := len(component)
-			if l > 2 {
-				cmap[l] = append(cmap[l], component)
-				if l > newmaxidx {
-					newmaxidx = l
-				}
+			//if l > 2 {
+			cmap[l] = append(cmap[l], component)
+			if l > newmaxidx {
+				newmaxidx = l
 			}
+			//}
 		}
 	}
 
