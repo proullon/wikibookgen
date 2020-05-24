@@ -1,10 +1,12 @@
 package clusterer
 
 import (
-	"testing"
+//	"testing"
 )
 
+/*
 func TestLouvainShort(t *testing.T) {
 	clu := NewLouvain()
 	ClusteringShort(t, clu)
 }
+*/

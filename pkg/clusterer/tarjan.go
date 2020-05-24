@@ -38,7 +38,7 @@ func (c *Tarjan) Cluster(j Job, rootID int64, g graph.Directed) (*Cluster, error
 		for _, n := range component {
 			if n.ID() == rootID {
 				log.Infof("Found root component (%d): %v", len(component), component)
-				cluster := &Cluster{Members: component}
+				cluster := &Cluster{Members: NewComponent(component)}
 				return cluster, nil
 			}
 		}

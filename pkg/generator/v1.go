@@ -53,7 +53,12 @@ func (g *V1) Generate(j Job) {
 }
 
 func (g *V1) generate(j Job) error {
-	id, err := g.Find(j.Subject, "fr")
+	loader, ok := g.loaders[j.Language]
+	if !ok {
+		return fmt.Errorf("Loader for lang=%s not available", j.Language)
+	}
+
+	id, err := g.Find(j.Subject, j.Language)
 	if err != nil {
 		return err
 	}
@@ -74,7 +79,7 @@ func (g *V1) generate(j Job) error {
 	clusteringDuration := time.Since(begin)
 
 	begin = time.Now()
-	wikibook, err := g.orderer.Order(j, graph, clusters)
+	wikibook, err := g.orderer.Order(loader, j, graph, clusters)
 	if err != nil {
 		return err
 	}
@@ -82,9 +87,15 @@ func (g *V1) generate(j Job) error {
 
 	log.Infof("Generate: %+v inserting wikibook", j)
 
-	err = g.insertWikibook(j, wikibook)
-	if err != nil {
-		return err
+	for i := 0; i < 3; i++ {
+		err = g.insertWikibook(j, wikibook)
+		if err == nil {
+			break
+		}
+		if i == 2 {
+			return err
+		}
+		time.Sleep(1 * time.Second)
 	}
 
 	log.Infof("Generate: %+v done ! (classification: %s, clustering: %s, ordering: %s", j, classificationDuration, clusteringDuration, orderingDuration)
@@ -105,15 +116,17 @@ func (g *V1) insertWikibook(j Job, wikibook *Wikibook) error {
 		return err
 	}
 
+	log.Infof("Inserting wikibook:\n%s", toc)
+
 	tx, err := g.db.Begin()
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
-	query := `INSERT INTO wikibook (id, subject, generator_version, gen_date, model, pages, table_of_content)
-													VALUES ($1, $2, $3, NOW(), $4, $5, $6)`
-	_, err = tx.Exec(query, j.ID, j.Subject, g.Version(), j.Model, wikibook.Pages, toc)
+	query := `INSERT INTO wikibook (id, subject, generator_version, gen_date, model, pages, language, table_of_content)
+													VALUES ($1, $2, $3, NOW(), $4, $5, $6, $7)`
+	_, err = tx.Exec(query, j.ID, j.Subject, g.Version(), j.Model, wikibook.Pages, j.Language, toc)
 	if err != nil {
 		return err
 	}

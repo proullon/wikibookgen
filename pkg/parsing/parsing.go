@@ -19,6 +19,8 @@ func CleanupTitle(s string) string {
 	s = strings.TrimLeft(s, " ")
 	s = strings.TrimRight(s, " ")
 
+	s = strings.Replace(s, "_", " ", -1)
+
 	s = strings.ToLower(s)
 
 	return s

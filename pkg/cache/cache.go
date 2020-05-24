@@ -18,6 +18,8 @@ type LocalCacheLoader struct {
 	incm     sync.Mutex
 	Outgoing map[int64][]int64
 	outm     sync.Mutex
+	Titles   map[int64]string
+	titlem   sync.Mutex
 }
 
 func NewLocalCacheLoader(src Loader) *LocalCacheLoader {
@@ -25,11 +27,12 @@ func NewLocalCacheLoader(src Loader) *LocalCacheLoader {
 		src:      src,
 		Incoming: make(map[int64][]int64),
 		Outgoing: make(map[int64][]int64),
+		Titles:   make(map[int64]string),
 	}
 
 	go func() {
 		for {
-			time.Sleep(10 * time.Second)
+			time.Sleep(1 * time.Minute)
 			l.Dump()
 		}
 	}()
@@ -105,4 +108,24 @@ func (l *LocalCacheLoader) Dump() {
 
 func (l *LocalCacheLoader) ID(s string) (int64, error) {
 	return l.src.ID(s)
+}
+
+func (l *LocalCacheLoader) Title(id int64) (string, error) {
+	l.titlem.Lock()
+	title, ok := l.Titles[id]
+	l.titlem.Unlock()
+	if ok {
+		return title, nil
+	}
+
+	title, err := l.src.Title(id)
+	if err != nil {
+		return title, err
+	}
+
+	l.titlem.Lock()
+	l.Titles[id] = title
+	l.titlem.Unlock()
+
+	return title, err
 }

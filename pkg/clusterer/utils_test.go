@@ -1,6 +1,7 @@
 package clusterer
 
 import (
+	"fmt"
 	"testing"
 
 	"gonum.org/v1/gonum/graph"
@@ -9,6 +10,16 @@ import (
 	. "github.com/proullon/wikibookgen/api/model"
 	"github.com/proullon/wikibookgen/pkg/classifier"
 	"github.com/proullon/wikibookgen/pkg/loader"
+)
+
+var (
+	MathPageID              int64 = 3697062
+	GraphPageID             int64 = 818568
+	GraphMathPageID         int64 = 2642295
+	GraphTheoryPageID       int64 = 2998
+	GeometryPageID          int64 = 1218
+	ArithmetiquePageID      int64 = 2057625
+	ProbabilityTheoryPageID int64 = 14993
 )
 
 func testGraph() *simple.DirectedGraph {
@@ -101,7 +112,7 @@ func ClusteringMath(t *testing.T, clu Clusterer) {
 	}
 
 	j := Job{
-		Model: string(TOUR),
+		Model: string(ABSTRACT),
 	}
 
 	var MathPageID int64 = 3697062
@@ -132,8 +143,60 @@ func ClusteringMath(t *testing.T, clu Clusterer) {
 	// shoud have 2 layer
 	d := clusters.Depth()
 	if d != 2 {
-		t.Errorf("Expected depth 2, got %d", d)
+		t.Fatalf("Expected depth 2, got %d", d)
 	}
+
+	if !Find(MathPageID, clusters.Members) {
+		t.Errorf("Expected Math in d1 members")
+	}
+	if !Find(GraphPageID, clusters.Members) {
+		t.Errorf("Expected Graph in d1 members")
+	}
+	if !Find(GraphTheoryPageID, clusters.Members) {
+		t.Errorf("Expected GraphTheory in d1 members")
+	}
+	if !Find(GeometryPageID, clusters.Members) {
+		t.Errorf("Expected Geometry in d1 members")
+	}
+	if !Find(ArithmetiquePageID, clusters.Members) {
+		t.Errorf("Expected Arithmetique in d1 members")
+	}
+	if !Find(ProbabilityTheoryPageID, clusters.Members) {
+		t.Errorf("Expected ProbabilityTheory in d1 members")
+	}
+
+	if HasDuplicate(clusters) {
+		t.Errorf("Found duplicate in clusters")
+	}
+}
+
+func HasDuplicate(cluster *Cluster) bool {
+	for id, _ := range cluster.Members {
+		count := 0
+		for _, c := range cluster.Subclusters {
+			_, exists := c.Members[id]
+			if exists {
+				count++
+			}
+			if count > 1 {
+				fmt.Printf("Found %d in 2 clusters", id)
+				return false
+			}
+		}
+
+	}
+
+	return false
+}
+
+func Find(id int64, c Component) bool {
+	for k, _ := range c {
+		if k == id {
+			return true
+		}
+	}
+
+	return false
 }
 
 func TestIsHCS(t *testing.T) {

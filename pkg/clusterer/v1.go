@@ -33,13 +33,17 @@ func (c *V1) MaxSize(j Job) int64 {
 func (c *V1) Cluster(j Job, rootID int64, g graph.Directed) (*Cluster, error) {
 
 	var layer int
+	var maxtime time.Duration
 	switch Model(j.Model) {
 	case ABSTRACT:
-		layer = 1
+		layer = 2
+		maxtime = 2 * time.Minute
 	case TOUR:
 		layer = 2
+		maxtime = 15 * time.Minute
 	case ENCYCLOPEDIA:
 		layer = 3
+		maxtime = 120 * time.Minute
 	}
 
 	graphsize := g.Nodes().Len()
@@ -54,10 +58,12 @@ func (c *V1) Cluster(j Job, rootID int64, g graph.Directed) (*Cluster, error) {
 	_ = layer
 	cluster := &Cluster{}
 
-	componentmap, maxidx, err := c.findcomponents(g, root)
+	componentmap, maxidx, err := c.findcomponents(g, root, maxtime)
 	if err != nil {
 		return nil, err
 	}
+
+	componentmap, maxidx, _ = mergecomponentmap(g, componentmap)
 
 	for i := maxidx; i > 1; i-- {
 		for _, cl := range componentmap[i] {
@@ -84,10 +90,44 @@ func (c *V1) Cluster(j Job, rootID int64, g graph.Directed) (*Cluster, error) {
 	for i := maxidx; i > 1; i-- {
 		log.Infof("- %d components of size %d", len(componentmap[i]), i)
 	}
+
+	unique := make(Component)
+	for _, components := range componentmap {
+		for _, component := range components {
+			for _, n := range component {
+				unique[n.ID()] = n
+			}
+		}
+	}
+	log.Infof("Found %d unique nodes", len(unique))
+
+	componentmap, maxidx = removeDuplicateInClusters(componentmap, maxidx)
+
+	cluster.Members = make(Component)
+	var printed int
+	if layer >= 2 {
+		printed = 0
+		for i := maxidx; i > 0; i-- {
+			components := componentmap[i]
+			for _, component := range components {
+				if printed > 50 {
+					break
+				}
+				for id, n := range component {
+					cluster.Members[id] = n
+				}
+				s := &Cluster{Members: component}
+				cluster.Subclusters = append(cluster.Subclusters, s)
+				printed++
+			}
+		}
+	}
+
+	log.Infof("Clustered %d unique nodes", len(cluster.Members))
 	return cluster, nil
 }
 
-func (c *V1) findcomponents(g graph.Directed, root graph.Node) (map[int][]Component, int, error) {
+func (c *V1) findcomponents(g graph.Directed, root graph.Node, maxtime time.Duration) (map[int][]Component, int, error) {
 	var maxidx int
 
 	componentmap := make(map[int][]Component)
@@ -95,7 +135,7 @@ func (c *V1) findcomponents(g graph.Directed, root graph.Node) (map[int][]Compon
 	neighbours := createNeighboursPool(g, []graph.Node{root})
 	neighbours = prepareNodePool(g, neighbours, 3)
 
-	maxtime := 15 * time.Minute / time.Duration(len(neighbours))
+	maxtime = maxtime / time.Duration(len(neighbours))
 
 	for _, n := range neighbours {
 		cm := make(Component)
@@ -118,10 +158,6 @@ func (c *V1) findcomponents(g graph.Directed, root graph.Node) (map[int][]Compon
 func (c *V1) Biggest(timeout time.Time, g graph.Directed, roots Component, last graph.Node) Component {
 	var biggest Component
 	biggest = roots
-
-	if !isComponentHCS(g, roots) {
-		return nil
-	}
 
 	/*
 		if !biggest.CanGrow(g) {
@@ -152,13 +188,19 @@ func (c *V1) Biggest(timeout time.Time, g graph.Directed, roots Component, last 
 		r2 := roots.Copy()
 		r2[n.ID()] = n
 
+		if time.Now().After(timeout) {
+			return biggest
+		}
+
+		if !isComponentHCS(g, r2) {
+			continue
+		}
+
 		c := c.Biggest(timeout, g, r2, n)
 		if len(c) > len(biggest) {
 			biggest = c
 		}
-		if time.Now().After(timeout) {
-			return biggest
-		}
+
 	}
 
 	return biggest
@@ -287,4 +329,34 @@ func kHCSrec(g graph.Graph, pool []graph.Node, targetsize int, prospect []graph.
 	}
 
 	return clusters
+}
+
+func removeDuplicateInClusters(componentmap map[int][]Component, maxidx int) (map[int][]Component, int) {
+	cmap := make(map[int][]Component)
+	fmap := make(map[int64]bool)
+	var newmaxidx int
+
+	for i := maxidx; i > 0; i-- {
+		components := componentmap[i]
+		for _, component := range components {
+			for id, _ := range component {
+				// if already found, delete from component, if not add to fmap
+				_, found := fmap[id]
+				if found {
+					delete(component, id)
+				} else {
+					fmap[id] = true
+				}
+			}
+			l := len(component)
+			if l > 2 {
+				cmap[l] = append(cmap[l], component)
+				if l > newmaxidx {
+					newmaxidx = l
+				}
+			}
+		}
+	}
+
+	return cmap, newmaxidx
 }

@@ -1,55 +1,14 @@
 package clusterer
 
 import (
-	"fmt"
 	"sort"
 	"time"
 
 	log "github.com/sirupsen/logrus"
 	"gonum.org/v1/gonum/graph"
+
+	. "github.com/proullon/wikibookgen/api/model"
 )
-
-type Component map[int64]graph.Node
-
-func (c Component) Copy() Component {
-	dup := make(map[int64]graph.Node)
-
-	for k, v := range c {
-		dup[k] = v
-	}
-
-	return dup
-}
-
-func (c Component) String() string {
-	var s string
-
-	size := len(c)
-	s = "["
-	var i int
-	for k, _ := range c {
-		s = fmt.Sprintf("%s%d", s, k)
-		i++
-		if i < size {
-			s += ", "
-		}
-	}
-	s += "]"
-
-	return s
-}
-
-func (c Component) CanGrow(g graph.Directed) bool {
-	minimal_degree := float64(float64(len(c)+1) / 2.0)
-
-	for _, n := range c {
-		if float64(Degree(g, n)) < minimal_degree {
-			return false
-		}
-	}
-
-	return true
-}
 
 func Degree(g graph.Directed, n graph.Node) int {
 	return g.From(n.ID()).Len() + g.To(n.ID()).Len()
@@ -82,7 +41,7 @@ func isHCS(g graph.Graph, nodes []graph.Node) bool {
 // With Let n=|G|. If G is highly connected, every vertex has degree >= n/2
 func isComponentHCS(g graph.Directed, c Component) bool {
 	var minimal_degree float64 = float64(float64(len(c)) / 2.0)
-	log.Debug("minimal_degree is %.2f", minimal_degree)
+	log.Debugf("minimal_degree is %.2f", minimal_degree)
 
 	for _, n1 := range c {
 		var count = 0
@@ -233,6 +192,29 @@ func removeduplicate(components [][]graph.Node) [][]graph.Node {
 	return nodup
 }
 
+func removeDuplicateComponents(components []Component) []Component {
+	var nodup []Component
+
+	begin := time.Now()
+
+	for _, c := range components {
+		found := false
+		for _, dc := range nodup {
+			if c.Equal(dc) {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			nodup = append(nodup, c)
+		}
+	}
+
+	log.Infof("duplicate removal took %s. Removed %d components", time.Since(begin), len(components)-len(nodup))
+	return nodup
+}
+
 func exists(c []graph.Node, components [][]graph.Node) bool {
 	for _, comp := range components {
 		if componentcmp(c, comp) {
@@ -263,6 +245,21 @@ func mergecomponentold(g graph.Graph, c1 []graph.Node, c2 []graph.Node) ([]graph
 	return merged, hcs
 }
 
+func mergeComponent(g graph.Directed, c1 Component, c2 Component) (Component, bool) {
+
+	mmap := make(map[int64]graph.Node)
+
+	for _, n := range c1 {
+		mmap[n.ID()] = n
+	}
+	for _, n := range c2 {
+		mmap[n.ID()] = n
+	}
+
+	hcs := isComponentHCS(g, mmap)
+	return mmap, hcs
+}
+
 func mergecomponent(g graph.Directed, c1 []graph.Node, c2 []graph.Node) (Component, bool) {
 
 	mmap := make(map[int64]graph.Node)
@@ -278,42 +275,31 @@ func mergecomponent(g graph.Directed, c1 []graph.Node, c2 []graph.Node) (Compone
 	return mmap, hcs
 }
 
-func mergecomponentsold2(g graph.Directed, components [][]graph.Node) ([][]graph.Node, int) {
-	var mergedcomps [][]graph.Node
+func mergeComponents(g graph.Directed, components []Component) ([]Component, int) {
+	var mergedcomps []Component
 	mergedmap := make(map[int]bool)
 
 	log.Infof("mergecomponents: Merging %d components", len(components))
 	begin := time.Now()
 
-	for i, c := range components {
-		/*
-			if time.Since(begin) > 2*time.Minute {
-				break
-			}
-		*/
-		for i2 := i + 1; i2 < len(components); i2++ {
-			c2 := components[i2]
-			if mc, ok := mergecomponent(g, c, c2); ok {
-				//if !exists(mc, mergedcomps) {
-				var nc []graph.Node
-				for _, n := range mc {
-					nc = append(nc, n)
-				}
-				sort.Sort(ByID(nc))
-				mergedcomps = append(mergedcomps, nc)
-				//log.Infof("Adding %v", nc)
-				mergedmap[i] = true
-				mergedmap[i2] = true
-				//}
-			}
+	c := components[0]
+
+	for i := 1; i < len(components); i++ {
+		c2 := components[i]
+		if mc, ok := mergeComponent(g, c, c2); ok {
+			//if !exists(mc, mergedcomps) {
+			mergedcomps = append(mergedcomps, mc)
+			//log.Infof("Adding %v", nc)
+			mergedmap[i] = true
+			mergedmap[0] = true
+			//}
 		}
-		log.Infof("mergecomponents: %d out of %d done", i+1, len(components))
 	}
 
 	for i, c := range components {
-		merged, ok := mergedmap[i]
-		if !ok || !merged {
-			log.Infof("Not merged: %v", c)
+		_, merged := mergedmap[i]
+		if !merged {
+			log.Debugf("Not merged: %v", c)
 			mergedcomps = append(mergedcomps, c)
 		}
 	}
@@ -351,7 +337,7 @@ func mergecomponents(g graph.Directed, components [][]graph.Node) ([][]graph.Nod
 	for i, c := range components {
 		merged, ok := mergedmap[i]
 		if !ok || !merged {
-			log.Infof("Not merged: %v", c)
+			log.Debugf("Not merged: %v", c)
 			mergedcomps = append(mergedcomps, c)
 		}
 	}
@@ -384,8 +370,8 @@ func mergecomponentsold(g graph.Graph, components [][]graph.Node) ([][]graph.Nod
 	return mergedcomps, len(components) - len(mergedcomps)
 }
 
-func mergecomponentmap(g graph.Directed, componentmap map[int][][]graph.Node) (map[int][][]graph.Node, int, int) {
-	var components [][]graph.Node
+func mergecomponentmap(g graph.Directed, componentmap map[int][]Component) (map[int][]Component, int, int) {
+	var components []Component
 
 	begin := time.Now()
 
@@ -397,8 +383,8 @@ func mergecomponentmap(g graph.Directed, componentmap map[int][][]graph.Node) (m
 
 	var removed int
 	for {
-		components = removeduplicate(components)
-		components, removed = mergecomponents(g, components)
+		components = removeDuplicateComponents(components)
+		components, removed = mergeComponents(g, components)
 		if removed == 0 {
 			break
 		}
@@ -406,7 +392,7 @@ func mergecomponentmap(g graph.Directed, componentmap map[int][][]graph.Node) (m
 
 	after := len(components)
 
-	newcomponentmap := make(map[int][][]graph.Node)
+	newcomponentmap := make(map[int][]Component)
 	var maxidx int
 
 	for _, comp := range components {

@@ -218,7 +218,7 @@ func populateClusters(parent *Cluster, depth int, wanted int, index int, profile
 		if comm == nil {
 			fmt.Printf("Could not find %d in interval %d", n.ID(), index)
 		}
-		cluster := &Cluster{Members: comm}
+		cluster := &Cluster{Members: NewComponent(comm)}
 		parent.Subclusters = append(parent.Subclusters, cluster)
 	}
 
@@ -236,7 +236,7 @@ func findRootCluster(profile []community.Interval, rootID int64, graphsize int) 
 		if relativesize > 90 {
 			continue
 		}
-		cluster := &Cluster{Members: comm}
+		cluster := &Cluster{Members: NewComponent(comm)}
 		return cluster, i, nil
 	}
 

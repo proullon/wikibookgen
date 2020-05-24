@@ -7,17 +7,19 @@
 ** gen_date: date of creation
 ** model: model of wikibook (ABSTRACT, TOUR, ENCYCLOPEDIA)
 ** pages: number of pages
+** language: wikibook language
 ** table_of_content: table of content json related to model. Contains all information necessary to generate book.
 */ 
-CREATE TABLE wikibook (id UUID PRIMARY KEY, subject TEXT, generator_version TEXT, gen_date TIMESTAMP WITH TIME ZONE, model TEXT, pages INT, table_of_content JSON);
+CREATE TABLE wikibook (id UUID PRIMARY KEY, subject TEXT, generator_version TEXT, gen_date TIMESTAMP WITH TIME ZONE, model TEXT, pages INT, language TEXT, table_of_content JSON);
 
 /*
 ** job table contains wikibook orders to be generated.
 **
 ** subject: starting page
 ** model: model of wikibook (ABSTRACT, TOUR, ENCYCLOPEDIA)
+** language: target language
 ** creation_date: date of creation
 ** status: job status (CREATED, ONGOING, DONE)
 */
-CREATE TABLE job (id UUID DEFAULT gen_random_uuid() PRIMARY KEY, subject TEXT, model TEXT, creation_date TIMESTAMP WITH TIME ZONE, status TEXT, book_id UUID);
+CREATE TABLE job (id UUID DEFAULT gen_random_uuid() PRIMARY KEY, subject TEXT, model TEXT, language TEXT, creation_date TIMESTAMP WITH TIME ZONE, status TEXT, book_id UUID);
 

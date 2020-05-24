@@ -1,10 +1,12 @@
 package clusterer
 
 import (
-	"testing"
+//	"testing"
 )
 
+/*
 func TestBetweennessShort(t *testing.T) {
 	clu := NewBetweenness()
 	ClusteringShort(t, clu)
 }
+*/

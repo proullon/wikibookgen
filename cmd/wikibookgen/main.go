@@ -138,7 +138,7 @@ func start(c *cli.Context) error {
 		return fmt.Errorf("classifier.NewV1: %s", err)
 	}
 
-	gen := generator.NewV1(db, cla, clusterer.NewV1(), orderer.NewV1(db), loadermap)
+	gen := generator.NewV1(db, cla, clusterer.NewV1(), orderer.NewV1(), loadermap)
 	wg := wikibookgen.New(db, gen)
 
 	ctx := context.WithValue(context.Background(), "wg", wg)
@@ -169,7 +169,7 @@ func openDB(host, dbname, usr, sslRootCert, sslClientCert, sslClientKey string, 
 		return nil, fmt.Errorf("db.Ping: %s", err)
 	}
 	db.SetMaxOpenConns(maxconn)
-	db.SetMaxIdleConns(maxconn)
+	db.SetMaxIdleConns(-1)
 
 	log.Infof("Connected to %s/%s", host, dbname)
 	return db, nil

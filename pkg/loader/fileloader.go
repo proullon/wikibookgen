@@ -13,12 +13,15 @@ type FileLoader struct {
 	incm     sync.Mutex
 	Outgoing map[int64][]int64
 	outm     sync.Mutex
+	Titles   map[int64]string
+	titlem   sync.Mutex
 }
 
 func NewFileLoader(filepath string) (*FileLoader, error) {
 	l := &FileLoader{
 		Incoming: make(map[int64][]int64),
 		Outgoing: make(map[int64][]int64),
+		Titles:   make(map[int64]string),
 	}
 
 	content, err := ioutil.ReadFile(filepath)
@@ -58,4 +61,15 @@ func (l *FileLoader) LoadOutgoingReferences(id int64) ([]int64, error) {
 
 func (l *FileLoader) ID(s string) (int64, error) {
 	return 0, fmt.Errorf("FileLoader.ID is not implemented")
+}
+
+func (l *FileLoader) Title(id int64) (string, error) {
+	l.titlem.Lock()
+	title, ok := l.Titles[id]
+	l.titlem.Unlock()
+	if ok {
+		return title, nil
+	}
+
+	return "", fmt.Errorf("not found")
 }

@@ -1,10 +1,12 @@
 package clusterer
 
 import (
-	"testing"
+//	"testing"
 )
 
+/*
 func TestTarjan(t *testing.T) {
 	clu := NewTarjan()
 	ClusteringShort(t, clu)
 }
+*/

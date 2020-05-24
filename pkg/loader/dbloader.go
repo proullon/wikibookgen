@@ -2,6 +2,9 @@ package loader
 
 import (
 	"database/sql"
+	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/proullon/wikibookgen/pkg/parsing"
 )
@@ -19,10 +22,11 @@ func NewDBLoader(db *sql.DB) *DBLoader {
 }
 
 func (l *DBLoader) LoadIncomingReferences(id int64) ([]int64, error) {
+	begin := time.Now()
+	defer func(b time.Time) {
+		log.Debugf("LoadIncomingReferences: took %s", time.Since(b))
+	}(begin)
 	refs := make([]int64, 0)
-
-	// WIP no index right now
-	//return refs, nil
 
 	query := `SELECT page_id FROM article_reference WHERE refered_page = $1`
 	rows, err := l.db.Query(query, id)
@@ -44,6 +48,10 @@ func (l *DBLoader) LoadIncomingReferences(id int64) ([]int64, error) {
 }
 
 func (l *DBLoader) LoadOutgoingReferences(id int64) ([]int64, error) {
+	begin := time.Now()
+	defer func(b time.Time) {
+		log.Debugf("LoadOutgoingReferences: took %s", time.Since(b))
+	}(begin)
 	query := `SELECT refered_page FROM article_reference WHERE page_id = $1`
 	rows, err := l.db.Query(query, id)
 	if err != nil {
@@ -65,9 +73,48 @@ func (l *DBLoader) LoadOutgoingReferences(id int64) ([]int64, error) {
 }
 
 func (l *DBLoader) ID(s string) (int64, error) {
+	var err error
+	var id int64
+
+	for i := 0; i < 10; i++ {
+		id, err = l.id(s)
+		if err == nil {
+			return id, nil
+		}
+		time.Sleep(1 * time.Second)
+	}
+
+	return 0, err
+}
+
+func (l *DBLoader) id(s string) (int64, error) {
 	query := `SELECT page_id FROM page WHERE lower_title = $1`
 
 	var id int64
 	err := l.db.QueryRow(query, parsing.CleanupTitle(s)).Scan(&id)
 	return id, err
+}
+
+func (l *DBLoader) Title(id int64) (string, error) {
+	var err error
+	var t string
+
+	for i := 0; i < 10; i++ {
+		t, err = l.title(id)
+		if err == nil {
+			return t, nil
+		}
+		log.Errorf("Title(%d): %s", id, err)
+		time.Sleep(1 * time.Second)
+	}
+
+	return "", err
+}
+
+func (l *DBLoader) title(id int64) (string, error) {
+	query := `SELECT title FROM page WHERE page_id = $1`
+
+	var title string
+	err := l.db.QueryRow(query, id).Scan(&title)
+	return title, err
 }

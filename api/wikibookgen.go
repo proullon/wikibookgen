@@ -45,8 +45,8 @@ func (wg *WikibookGen) jobRoutine() {
 	defer tx.Rollback()
 
 	var j Job
-	query := `SELECT id, subject, model FROM job WHERE status = $1 LIMIT 1`
-	err = tx.QueryRow(query, CREATED).Scan(&j.ID, &j.Subject, &j.Model)
+	query := `SELECT id, subject, model, language FROM job WHERE status = $1 LIMIT 1`
+	err = tx.QueryRow(query, CREATED).Scan(&j.ID, &j.Subject, &j.Model, &j.Language)
 	if err != nil {
 		if err != sql.ErrNoRows {
 			log.Errorf("job: cannot query waiting job: %s", err)
@@ -73,7 +73,12 @@ func (wg *WikibookGen) jobRoutine() {
 
 func (wg *WikibookGen) QueueGenerationJob(subject, model, lang string) (string, error) {
 
-	err := wg.ValidateSubject(subject, lang)
+	err := wg.ValidateLanguage(lang)
+	if err != nil {
+		return "", err
+	}
+
+	err = wg.ValidateSubject(subject, lang)
 	if err != nil {
 		return "", err
 	}
@@ -83,10 +88,10 @@ func (wg *WikibookGen) QueueGenerationJob(subject, model, lang string) (string, 
 		return "", err
 	}
 
-	query := `INSERT INTO job (subject, model, creation_date, status) VALUES ($1, $2, NOW(), $3) RETURNING id`
+	query := `INSERT INTO job (subject, model, creation_date, status, language) VALUES ($1, $2, NOW(), $3, $4) RETURNING id`
 
 	var id string
-	err = wg.db.QueryRow(query, subject, model, CREATED).Scan(&id)
+	err = wg.db.QueryRow(query, subject, model, CREATED, lang).Scan(&id)
 	return id, err
 }
 
@@ -104,9 +109,18 @@ func (wg *WikibookGen) ValidateModel(s string) error {
 func (wg *WikibookGen) ValidateSubject(s string, lang string) error {
 	_, err := wg.gen.Find(s, lang)
 	if err != nil {
-		return err
+		return fmt.Errorf("ValidateSubject(%s, %s): %s", s, lang, err)
 	}
 	return nil
+}
+
+func (wg *WikibookGen) ValidateLanguage(language string) error {
+	switch language {
+	case "fr", "en":
+		return nil
+	default:
+		return fmt.Errorf("language not available")
+	}
 }
 
 func (wg *WikibookGen) LoadOrder(uuid string) (string, string, error) {

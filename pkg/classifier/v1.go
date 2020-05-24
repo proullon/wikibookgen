@@ -142,6 +142,7 @@ func (g *Grapher) classify(_payload interface{}) (interface{}, error) {
 	// load node
 	v, err := g.loadVertex(id)
 	if err != nil {
+		log.Errorf("LoadVertex(%d): %s", id, err)
 		return nil, err
 	}
 
@@ -154,11 +155,11 @@ func (g *Grapher) classify(_payload interface{}) (interface{}, error) {
 	// check if loading node references is pertinent
 	// stop at 2nd degree to avoid infinite loading
 	maxdegree := 2
+	trail = append(trail, v.ID)
 	if len(trail) >= maxdegree {
 		//log.Infof("Stop. cause of degree %d", maxdegree)
 		return nil, nil
 	}
-	trail = append(trail, v.ID)
 
 	var tofeed []int64
 
@@ -166,7 +167,7 @@ func (g *Grapher) classify(_payload interface{}) (interface{}, error) {
 		// stop if id is already in trail, no loop loading
 		for _, t := range trail {
 			if t == r {
-				log.Debugf("Ignoring %d cause loop detected in trail %+v", t, trail)
+				log.Infof("Ignoring %d cause loop detected in trail %+v", t, trail)
 				continue
 			}
 
@@ -178,7 +179,7 @@ func (g *Grapher) classify(_payload interface{}) (interface{}, error) {
 		// stop if id is already in trail, no loop loading
 		for _, t := range trail {
 			if t == r {
-				log.Debugf("Ignoring %d cause loop detected in trail %+v", t, trail)
+				log.Infof("Ignoring %d cause loop detected in trail %+v", t, trail)
 				continue
 			}
 

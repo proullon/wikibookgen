@@ -61,19 +61,19 @@ func (c *V2) Cluster(j Job, rootID int64, g graph.Directed) (*Cluster, error) {
 		return nil, err
 	}
 
-	unique := make(map[int64]graph.Node)
+	unique := make(Component)
 	for _, components := range componentmap {
 		for _, component := range components {
 			if len(component) > 2 {
-				cluster.Members = append(cluster.Members, component...)
-			}
-			for _, n := range component {
-				unique[n.ID()] = n
+				for _, n := range component {
+					unique[n.ID()] = n
+				}
 			}
 		}
 	}
 
 	log.Infof("Clustered %d unique nodes", len(unique))
+	cluster.Members = unique
 
 	var printed int
 	for i := maxidx; i > 0; i-- {
@@ -95,7 +95,7 @@ func (c *V2) Cluster(j Job, rootID int64, g graph.Directed) (*Cluster, error) {
 				if printed > 50 {
 					break
 				}
-				cluster.Subclusters = append(cluster.Subclusters, &Cluster{Members: component})
+				cluster.Subclusters = append(cluster.Subclusters, &Cluster{Members: NewComponent(component)})
 
 				printed++
 			}
@@ -247,127 +247,130 @@ func (c *V2) Cluster(j Job, rootID int64, g graph.Directed) (*Cluster, error) {
 
 func (c *V2) cluster(g graph.Directed, root graph.Node) (map[int][][]graph.Node, int, error) {
 	log.Infof("v2.cluster")
-	cbegin := time.Now()
-
-	//testn := g.Node(2350068)
-	//	testn := g.Node(2057625)
-
 	componentmap := make(map[int][][]graph.Node)
-	//previous := [][]graph.Node{[]graph.Node{root, testn}}
-	//	previous := [][]graph.Node{[]graph.Node{root}}
+	var maxidx int
+	/*
+		var removed int
+			cbegin := time.Now()
 
-	// create 2 node components with root and each of its neighbour
-	var previous [][]graph.Node
-	nodes := g.From(root.ID())
-	for nodes.Next() {
-		p := []graph.Node{root, nodes.Node()}
-		sort.Sort(ByID(p))
-		previous = append(previous, p)
-	}
-	nodes = g.To(root.ID())
-	for nodes.Next() {
-		p := []graph.Node{root, nodes.Node()}
-		sort.Sort(ByID(p))
-		previous = append(previous, p)
-	}
+			//testn := g.Node(2350068)
+			//	testn := g.Node(2057625)
 
-	componentmap[2] = previous
+			//previous := [][]graph.Node{[]graph.Node{root, testn}}
+			//	previous := [][]graph.Node{[]graph.Node{root}}
 
-	var maxidx, removed int
-	componentmap, maxidx, removed = mergecomponentmap(g, componentmap)
-	log.Infof("Removed %d components in map after cleanup. Biggest cluster %d", removed, maxidx)
+			// create 2 node components with root and each of its neighbour
+			var previous [][]graph.Node
+			nodes := g.From(root.ID())
+			for nodes.Next() {
+				p := []graph.Node{root, nodes.Node()}
+				sort.Sort(ByID(p))
+				previous = append(previous, p)
+			}
+			nodes = g.To(root.ID())
+			for nodes.Next() {
+				p := []graph.Node{root, nodes.Node()}
+				sort.Sort(ByID(p))
+				previous = append(previous, p)
+			}
 
-	previous = componentmap[2]
+			componentmap[2] = previous
 
-	target := 3
-	for {
+			componentmap, maxidx, removed = mergecomponentmap(g, componentmap)
+			log.Infof("Removed %d components in map after cleanup. Biggest cluster %d", removed, maxidx)
+
+			previous = componentmap[2]
+
+			target := 3
+			for {
+				for i := 2; i <= maxidx; i++ {
+					log.Infof("- %d components of size %d", len(componentmap[i]), i)
+				}
+
+				log.Infof("Looking for connected components of size %d from %d root component", target, len(previous))
+				begin := time.Now()
+
+				components, err := c.Grow(g, previous, target)
+				log.Infof("Looking for connected components of size %d done. Got %d components after %s", target, len(components), time.Since(begin))
+				if err != nil {
+					return nil, 0, err
+				}
+
+				log.Infof("Adding %d components in componentmap", len(components))
+				componentmap[target] = append(componentmap[target], components...)
+
+				var removed, m int
+				componentmap, m, removed = mergecomponentmap(g, componentmap)
+				if m > maxidx {
+					maxidx = m
+				}
+				log.Infof("Removed %d components in map after cleanup. Biggest cluster %d", removed, maxidx)
+
+				/*
+						var removed int
+						for {
+							components = removeduplicate(components)
+							components, removed = mergecomponents(g, components)
+							if removed == 0 {
+								break
+							}
+						}
+					log.Infof("Got %d components of size %d after cleanup", len(components), target)
+	*/
+
+	/*
+		for _, com := range components {
+			found := false
+			for _, n := range com {
+				if n.ID() == root.ID() {
+					found = true
+					break
+				}
+			}
+			if !found {
+				log.Errorf("Root node not found in component %v", com)
+			}
+		}
+	*/
+
+	/*
+		if len(components) == 0 {
+			break
+		}
+	*/
+
+	/*
+		for _, comp := range components {
+			l := len(comp)
+			if l > maxidx {
+				maxidx = l
+			}
+			componentmap[l] = append(componentmap[l], comp)
+		}
+	*/
+	/*
+			if target > maxidx {
+				break
+			}
+
+			if time.Since(cbegin) > 120*time.Minute {
+				break
+			}
+
+			//componentmap[target] = components
+			//previous = components
+			previous = componentmap[target]
+			//maxidx = target
+			target++
+		}
+
+		log.Infof("v2.cluster done:")
 		for i := 2; i <= maxidx; i++ {
 			log.Infof("- %d components of size %d", len(componentmap[i]), i)
 		}
 
-		log.Infof("Looking for connected components of size %d from %d root component", target, len(previous))
-		begin := time.Now()
-
-		components, err := c.Grow(g, previous, target)
-		log.Infof("Looking for connected components of size %d done. Got %d components after %s", target, len(components), time.Since(begin))
-		if err != nil {
-			return nil, 0, err
-		}
-
-		log.Infof("Adding %d components in componentmap", len(components))
-		componentmap[target] = append(componentmap[target], components...)
-
-		var removed, m int
-		componentmap, m, removed = mergecomponentmap(g, componentmap)
-		if m > maxidx {
-			maxidx = m
-		}
-		log.Infof("Removed %d components in map after cleanup. Biggest cluster %d", removed, maxidx)
-
-		/*
-				var removed int
-				for {
-					components = removeduplicate(components)
-					components, removed = mergecomponents(g, components)
-					if removed == 0 {
-						break
-					}
-				}
-			log.Infof("Got %d components of size %d after cleanup", len(components), target)
-		*/
-
-		/*
-			for _, com := range components {
-				found := false
-				for _, n := range com {
-					if n.ID() == root.ID() {
-						found = true
-						break
-					}
-				}
-				if !found {
-					log.Errorf("Root node not found in component %v", com)
-				}
-			}
-		*/
-
-		/*
-			if len(components) == 0 {
-				break
-			}
-		*/
-
-		/*
-			for _, comp := range components {
-				l := len(comp)
-				if l > maxidx {
-					maxidx = l
-				}
-				componentmap[l] = append(componentmap[l], comp)
-			}
-		*/
-
-		if target > maxidx {
-			break
-		}
-
-		if time.Since(cbegin) > 120*time.Minute {
-			break
-		}
-
-		//componentmap[target] = components
-		//previous = components
-		previous = componentmap[target]
-		//maxidx = target
-		target++
-	}
-
-	log.Infof("v2.cluster done:")
-	for i := 2; i <= maxidx; i++ {
-		log.Infof("- %d components of size %d", len(componentmap[i]), i)
-	}
-
-	log.Infof("v2.cluster total time: %s", time.Since(cbegin))
+		log.Infof("v2.cluster total time: %s", time.Since(cbegin))
+	*/
 	return componentmap, maxidx, nil
 }
 

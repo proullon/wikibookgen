@@ -3,7 +3,10 @@ package model
 import (
 	"fmt"
 
+	log "github.com/sirupsen/logrus"
 	"gonum.org/v1/gonum/graph"
+	"gonum.org/v1/gonum/graph/network"
+	"gonum.org/v1/gonum/graph/simple"
 )
 
 /*
@@ -37,6 +40,7 @@ type Loader interface {
 	LoadIncomingReferences(int64) ([]int64, error)
 	LoadOutgoingReferences(int64) ([]int64, error)
 	ID(string) (int64, error)
+	Title(int64) (string, error)
 }
 
 // Classifier interface defines objects able to select
@@ -59,8 +63,14 @@ type Clusterer interface {
 // clusters (chapters) and Wikipedia articles inside cluster
 // in coherent reading order
 type Orderer interface {
-	Order(Job, graph.Directed, *Cluster) (*Wikibook, error)
+	Order(Loader, Job, graph.Directed, *Cluster) (*Wikibook, error)
 	Version() string
+}
+
+// Editor interface defines objects able to edit graph clusters into
+// a humain readable table of content
+type Editor interface {
+	Edit(Job, *Cluster) (*Wikibook, error)
 }
 
 type JobStatus string
@@ -72,9 +82,10 @@ const (
 )
 
 type Job struct {
-	ID      string
-	Subject string
-	Model   string
+	ID       string
+	Subject  string
+	Model    string
+	Language string
 }
 
 type Model string
@@ -257,7 +268,7 @@ type Cluster struct {
 	IncomingEdges []*Vertex `json:"-"`
 	OutgoingEdges []*Vertex `json:"-"`
 
-	Members     []graph.Node
+	Members     Component
 	Subclusters []*Cluster
 }
 
@@ -277,4 +288,115 @@ func (c *Cluster) depth(cl *Cluster, depth int) int {
 	}
 
 	return max
+}
+
+type Component map[int64]graph.Node
+
+func NewComponent(nodes []graph.Node) Component {
+	c := make(Component)
+
+	for _, n := range nodes {
+		c[n.ID()] = n
+	}
+
+	return c
+}
+
+func (c Component) Copy() Component {
+	dup := make(map[int64]graph.Node)
+
+	for k, v := range c {
+		dup[k] = v
+	}
+
+	return dup
+}
+
+func (c Component) String() string {
+	var s string
+
+	size := len(c)
+	s = "["
+	var i int
+	for k, _ := range c {
+		s = fmt.Sprintf("%s%d", s, k)
+		i++
+		if i < size {
+			s += ", "
+		}
+	}
+	s += "]"
+
+	return s
+}
+
+func (c Component) CanGrow(g graph.Directed) bool {
+	minimal_degree := float64(float64(len(c)+1) / 2.0)
+
+	for _, n := range c {
+		if float64(c.Degree(g, n)) < minimal_degree {
+			return false
+		}
+	}
+
+	return true
+}
+
+func (c Component) Graph(g graph.Directed) graph.Directed {
+	cg := simple.NewDirectedGraph()
+
+	for k, n1 := range c {
+		from := cg.Node(k)
+		if from == nil {
+			from = NewNode(k)
+			cg.AddNode(from)
+		}
+
+		for _, n2 := range c {
+			if g.HasEdgeFromTo(n1.ID(), n2.ID()) {
+				to := cg.Node(n2.ID())
+				if to == nil {
+					to = NewNode(n2.ID())
+				}
+				cg.SetEdge(cg.NewEdge(from, to))
+			}
+		}
+	}
+
+	return cg
+}
+
+func (c Component) Betweenness(g graph.Directed) map[int64]float64 {
+	// create graph containing only component
+	cg := c.Graph(g)
+
+	// compute betweenness for component only
+	bvalues := network.Betweenness(cg)
+	for k, v := range bvalues {
+		log.Infof("%v %v", k, v)
+	}
+
+	return bvalues
+}
+
+func (c Component) Degree(g graph.Directed, n graph.Node) int {
+	return g.From(n.ID()).Len() + g.To(n.ID()).Len()
+}
+
+func (c Component) Equal(other Component) bool {
+	if len(c) != len(other) {
+		return false
+	}
+
+	for i := range c {
+		_, ok := other[i]
+		if !ok {
+			return false
+		}
+		if c[i].ID() != other[i].ID() {
+			return false
+		}
+	}
+
+	return true
 }

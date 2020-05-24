@@ -25,10 +25,12 @@ var tt = []test{
 		Name: "Order",
 		Test: testOrder,
 	},
-	{
-		Name: "Clustering",
-		Test: testClustering,
-	},
+	/*
+		{
+			Name: "Clustering",
+			Test: testClustering,
+		},
+	*/
 }
 
 func main() {
