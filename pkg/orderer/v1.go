@@ -57,12 +57,14 @@ func (o *V1) Order(l Loader, j Job, g graph.Directed, clusters *Cluster) (*Wikib
 				centerb = b
 			}
 		}
-		title, err := l.Title(center)
-		if err != nil {
-			return nil, fmt.Errorf("Title(%d): %s", center, err)
+		chapter.Title = "???"
+		if center > 0 {
+			chapter.Title, err = l.Title(center)
+			if err != nil {
+				return nil, fmt.Errorf("Order Chapter Title(%d): %s", center, err)
+			}
+			log.Infof("Component center is %d with %f !", center, centerb)
 		}
-		log.Infof("Component center is %d with %f !", center, centerb)
-		chapter.Title = title
 		for _, n := range cluster.Members {
 			article, err := o.PageThis(l, n)
 			if err != nil {
@@ -113,7 +115,7 @@ func (o *V1) ChapterThis(l Loader, g graph.Directed, cluster *Cluster) (*Chapter
 	center := o.Center(g, cluster)
 	title, err := l.Title(center)
 	if err != nil {
-		return nil, fmt.Errorf("Title(%d): %s", center, err)
+		return nil, fmt.Errorf("ChapterTitle(%d): %s", center, err)
 	}
 	c.Title = title
 
@@ -132,7 +134,7 @@ func (o *V1) PageThis(l Loader, n graph.Node) (*Page, error) {
 	p := &Page{Id: n.ID()}
 	title, err := l.Title(n.ID())
 	if err != nil {
-		return nil, fmt.Errorf("Title(%d): %s", n.ID(), err)
+		return nil, fmt.Errorf("PageTitle(%d): %s", n.ID(), err)
 	}
 	p.Title = title
 	return p, nil

@@ -102,6 +102,33 @@ func (c *V1) Cluster(j Job, rootID int64, g graph.Directed) (*Cluster, error) {
 	log.Infof("Found %d unique nodes", len(unique))
 
 	componentmap, maxidx = removeDuplicateInClusters(componentmap, maxidx)
+	log.Infof("Removed duplicate in clusters")
+
+	for i := maxidx; i > 1; i-- {
+		for _, cl := range componentmap[i] {
+			for _, n := range cl {
+				if n.ID() == 818568 {
+					log.Infof("Found graph page id ! (degree %d) in %v", g.From(n.ID()).Len()+g.To(n.ID()).Len(), cl)
+				}
+				if n.ID() == 2350068 {
+					log.Infof("Found graph theory page id ! (degree %d) in %v", g.From(n.ID()).Len()+g.To(n.ID()).Len(), cl)
+				}
+				if n.ID() == 14993 {
+					log.Infof("Found probability theory page id ! (degree %d) in %v", g.From(n.ID()).Len()+g.To(n.ID()).Len(), cl)
+				}
+				if n.ID() == 1218 {
+					log.Infof("Found geometry page id ! (degree %d) in %v", g.From(n.ID()).Len()+g.To(n.ID()).Len(), cl)
+				}
+				if n.ID() == 2057625 {
+					log.Infof("Found arithmetique page id !(degree %d) in %v", g.From(n.ID()).Len()+g.To(n.ID()).Len(), cl)
+				}
+			}
+		}
+	}
+
+	for i := maxidx; i > 1; i-- {
+		log.Infof("- %d components of size %d", len(componentmap[i]), i)
+	}
 
 	cluster.Members = make(Component)
 	var printed int
@@ -336,7 +363,7 @@ func removeDuplicateInClusters(componentmap map[int][]Component, maxidx int) (ma
 	fmap := make(map[int64]bool)
 	var newmaxidx int
 
-	for i := maxidx; i > 0; i-- {
+	for i := maxidx; i > 2; i-- {
 		components := componentmap[i]
 		for _, component := range components {
 			for id, _ := range component {
