@@ -107,9 +107,6 @@ func ClusteringShort(t *testing.T, clu Clusterer) {
 }
 
 func ClusteringMath(t *testing.T, clu Clusterer) {
-	if testing.Short() {
-		t.Skip()
-	}
 
 	j := Job{
 		Model: string(ABSTRACT),

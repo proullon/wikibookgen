@@ -37,10 +37,10 @@ func (c *V1) Cluster(j Job, rootID int64, g graph.Directed) (*Cluster, error) {
 	switch Model(j.Model) {
 	case ABSTRACT:
 		layer = 2
-		maxtime = 2 * time.Minute
+		maxtime = 5 * time.Minute
 	case TOUR:
 		layer = 2
-		maxtime = 600 * time.Minute
+		maxtime = 20 * time.Minute
 	case ENCYCLOPEDIA:
 		layer = 3
 		maxtime = 120 * time.Minute
@@ -63,7 +63,7 @@ func (c *V1) Cluster(j Job, rootID int64, g graph.Directed) (*Cluster, error) {
 		return nil, err
 	}
 
-	componentmap, maxidx, _ = mergecomponentmap(g, componentmap)
+	//componentmap, maxidx, _ = mergecomponentmap(g, componentmap)
 
 	for i := maxidx; i > 1; i-- {
 		for _, cl := range componentmap[i] {
@@ -136,7 +136,7 @@ func (c *V1) Cluster(j Job, rootID int64, g graph.Directed) (*Cluster, error) {
 		for i := maxidx; i > 2; i-- {
 			components := componentmap[i]
 			for _, component := range components {
-				if pagecount > 1000 || chaptercount > 50 {
+				if pagecount > 1000 || chaptercount > 100 {
 					break
 				}
 				for id, n := range component {
@@ -168,16 +168,30 @@ func (c *V1) findcomponents(g graph.Directed, root graph.Node, maxtime time.Dura
 			forbidden[n.ID()] = true
 		}
 	*/
-	allocated := maxtime / time.Duration(len(neighbours))
+	allocation := len(neighbours)
+	if len(neighbours) > 100 {
+		allocation = len(neighbours) / 4
+	}
+	allocated := maxtime / time.Duration(allocation)
+	globalTimeout := time.Now().Add(maxtime)
 
-	for _, n := range neighbours {
+	for i, n := range neighbours {
+		if time.Now().After(globalTimeout) {
+			log.Infof("Stopping early (%d/%d done)", i, len(neighbours))
+			break
+		}
+
 		cm := make(Component)
 		cm[root.ID()] = root
 		cm[n.ID()] = n
-		log.Infof("You got %s to find biggest component from %v", maxtime, cm)
+		log.Debugf("You got %s to find biggest component from %v", maxtime, cm)
 		begin := time.Now()
-		component := c.Biggest(time.Now().Add(allocated), g, cm, n, forbidden)
-		log.Infof("Got %v from %v after %s", component, cm, time.Since(begin))
+		end := time.Now().Add(allocated)
+		component := c.BiggestBestCandidate(end, g, cm, n, forbidden)
+		if len(component) <= 2 {
+			continue
+		}
+		log.Infof("Got %v from %v after %s with %s left", component, cm, time.Since(begin), time.Until(end))
 		for id, _ := range component {
 			forbidden[id] = true
 		}
@@ -191,7 +205,77 @@ func (c *V1) findcomponents(g graph.Directed, root graph.Node, maxtime time.Dura
 	return componentmap, maxidx, nil
 }
 
-func (c *V1) Biggest(timeout time.Time, g graph.Directed, roots Component, last graph.Node, forbidden map[int64]bool) Component {
+func (c *V1) BiggestBestCandidate(timeout time.Time, g graph.Directed, roots Component, last graph.Node, forbidden map[int64]bool) Component {
+	var biggest Component
+	biggest = roots
+
+	if len(biggest) > 5 {
+		if !biggest.CanGrow(g) {
+			log.Infof("Component %v cannot grow to %d", biggest, len(biggest)+1)
+			return biggest
+		}
+	}
+
+	neighbours := createComponentNeighboursPool(g, roots)
+	//	neighbours := createNeighboursPool(g, []graph.Node{last})
+	var allowedNeighbours []graph.Node
+	for _, n := range neighbours {
+		if _, exists := roots[n.ID()]; exists {
+			continue
+		}
+		if _, exists := forbidden[n.ID()]; exists {
+			continue
+		}
+		allowedNeighbours = append(allowedNeighbours, n)
+	}
+	neighbours = prepareNodePool(g, allowedNeighbours, len(roots)+1)
+
+	//timeleft := time.Until(timeout)
+	//maxtime := timeleft / time.Duration(len(neighbours))
+	//log.Infof("%s until timeout. You got %s to find biggest component from  %v", timeleft, maxtime, roots)
+	if _, ok := roots[2350068]; ok {
+		log.Infof("%s to find biggest component from %v", time.Until(timeout), roots)
+		timeout = time.Now().Add(1 * time.Minute)
+	}
+
+	bestfit, maxidx := biggest.BestCandidates(g, neighbours)
+
+	for i := maxidx; i > 0; i-- {
+		components := bestfit[i]
+		for _, n := range components {
+
+			if n.ID() == 2350068 {
+				log.Infof("TESTING GRAPH with %s", roots)
+				timeout = time.Now().Add(1 * time.Minute)
+			}
+			/*
+				if time.Now().After(timeout) {
+					return biggest
+				}
+			*/
+
+			r2 := roots.Copy()
+			r2[n.ID()] = n
+
+			if time.Now().After(timeout) {
+				return biggest
+			}
+
+			if !isComponentHCS(g, r2) {
+				continue
+			}
+
+			c := c.BiggestBestCandidate(timeout, g, r2, n, forbidden)
+			if len(c) > len(biggest) {
+				biggest = c
+			}
+		}
+	}
+
+	return biggest
+}
+
+func (c *V1) BiggestBreadthFirst(timeout time.Time, g graph.Directed, roots Component, last graph.Node, forbidden map[int64]bool) Component {
 	var biggest Component
 	biggest = roots
 
@@ -209,13 +293,83 @@ func (c *V1) Biggest(timeout time.Time, g graph.Directed, roots Component, last 
 	//timeleft := time.Until(timeout)
 	//maxtime := timeleft / time.Duration(len(neighbours))
 	//log.Infof("%s until timeout. You got %s to find biggest component from  %v", timeleft, maxtime, roots)
-	log.Infof("%s to find biggest component from %v", time.Until(timeout), roots)
+	log.Debugf("%s to find biggest component from %v", time.Until(timeout), roots)
+
+	var added []graph.Node
 
 	for _, n := range neighbours {
+		if _, exists := biggest[n.ID()]; exists {
+			continue
+		}
+		if _, exists := forbidden[n.ID()]; exists {
+			continue
+		}
+		/*
+			if time.Now().After(timeout) {
+				return biggest
+			}
+		*/
+
+		r2 := biggest.Copy()
+		r2[n.ID()] = n
+
+		if !isComponentHCS(g, r2) {
+			continue
+		}
+
+		added = append(added, n)
+		biggest = r2
+	}
+
+	for _, n := range added {
+		if time.Now().After(timeout) {
+			return biggest
+		}
+
+		c := c.BiggestBreadthFirst(timeout, g, biggest, n, forbidden)
+		if len(c) > len(biggest) {
+			biggest = c
+		}
+
+	}
+
+	return biggest
+}
+
+func (c *V1) BiggestDepthFirst(timeout time.Time, g graph.Directed, roots Component, last graph.Node, forbidden map[int64]bool) Component {
+	var biggest Component
+	biggest = roots
+
+	/*
+		if !biggest.CanGrow(g) {
+			log.Infof("Component %v cannot grow to %d", biggest, len(biggest))
+			return biggest
+		}
+	*/
+
+	//	neighbours := createComponentNeighboursPool(g, roots)
+	neighbours := createNeighboursPool(g, []graph.Node{last})
+	neighbours = prepareNodePool(g, neighbours, len(roots)+1)
+
+	//timeleft := time.Until(timeout)
+	//maxtime := timeleft / time.Duration(len(neighbours))
+	//log.Infof("%s until timeout. You got %s to find biggest component from  %v", timeleft, maxtime, roots)
+	if _, ok := roots[2350068]; ok {
+		log.Infof("%s to find biggest component from %v", time.Until(timeout), roots)
+		timeout = time.Now().Add(1 * time.Minute)
+	}
+
+	for _, n := range neighbours {
+		if n.ID() == 2350068 {
+			log.Infof("TESTING GRAPH with %s", roots)
+		}
 		if _, exists := roots[n.ID()]; exists {
 			continue
 		}
 		if _, exists := forbidden[n.ID()]; exists {
+			if n.ID() == 2350068 {
+				log.Infof("GRAPH is forbidden :(")
+			}
 			continue
 		}
 		/*
@@ -235,7 +389,7 @@ func (c *V1) Biggest(timeout time.Time, g graph.Directed, roots Component, last 
 			continue
 		}
 
-		c := c.Biggest(timeout, g, r2, n, forbidden)
+		c := c.BiggestDepthFirst(timeout, g, r2, n, forbidden)
 		if len(c) > len(biggest) {
 			biggest = c
 		}

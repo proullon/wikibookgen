@@ -401,3 +401,45 @@ func (c Component) Equal(other Component) bool {
 
 	return true
 }
+
+func (c Component) CanJoin(g graph.Directed, n graph.Node) (int, bool) {
+	minimal_degree := float64(float64(len(c)+1) / 2.0)
+
+	if float64(g.From(n.ID()).Len()+g.To(n.ID()).Len()) < minimal_degree {
+		return 0, false
+	}
+
+	var count int
+	for id, _ := range c {
+		if g.HasEdgeBetween(id, n.ID()) {
+			count++
+		}
+	}
+
+	if float64(count) >= minimal_degree {
+		return count, true
+	}
+
+	return count, false
+}
+
+func (c Component) BestCandidates(g graph.Directed, candidates []graph.Node) (map[int][]graph.Node, int) {
+	var maxidx int
+	mm := make(map[int][]graph.Node)
+	begin := time.Now()
+
+	for _, candidate := range candidates {
+		count, valid := c.CanJoin(g, candidate)
+		if valid {
+			mm[count] = append(mm[count], candidate)
+			if count > maxidx {
+				maxidx = count
+			}
+		}
+	}
+
+	if maxidx > 2 {
+		log.Debugf("BestCandidates (%s) for cluster %s have %d edges (%d/%d)", time.Since(begin), c, maxidx, len(mm[maxidx]), len(candidates))
+	}
+	return mm, maxidx
+}

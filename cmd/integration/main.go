@@ -61,21 +61,25 @@ func main() {
 func testOrder() error {
 	subject := `Mathématiques`
 	model := `tour`
+	lang := `fr`
 
 	// test invalid model
-	orderID, err := wikibookgen.Order(subject, `invalidmodel`)
+	orderID, err := wikibookgen.Order(subject, `invalidmodel`, lang)
 	if err == nil {
 		return fmt.Errorf("Order(%s, invalidmodel): should have error", subject)
 	}
 
 	// test invalid subject
-	orderID, err = wikibookgen.Order(`invalidsubject`, model)
+	orderID, err = wikibookgen.Order(`invalidsubject`, model, lang)
 	if err == nil {
 		return fmt.Errorf("Order(invalidsubject, %s): should have error", model)
 	}
 
+	wikibookgen.Order("Musique", model, lang)
+	wikibookgen.Order("Histoire_du_vol_spatial", model, lang)
+
 	// test nominal
-	orderID, err = wikibookgen.Order(subject, model)
+	orderID, err = wikibookgen.Order(subject, model, lang)
 	if err != nil {
 		return fmt.Errorf("Order(%s): %s", subject, err)
 	}

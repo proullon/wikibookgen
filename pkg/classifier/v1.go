@@ -167,7 +167,13 @@ func (g *Grapher) classify(_payload interface{}) (interface{}, error) {
 		// stop if id is already in trail, no loop loading
 		for _, t := range trail {
 			if t == r {
-				log.Infof("Ignoring %d cause loop detected in trail %+v", t, trail)
+				log.Debugf("Ignoring %d cause loop detected in trail %+v", t, trail)
+				continue
+			}
+			// check if vertex is in vertices map and loaded. If so you are done
+			exist, loaded := g.loaded(r)
+			if exist && loaded {
+				log.Debugf("Ignoring %d exists and loaded", id)
 				continue
 			}
 
@@ -179,7 +185,12 @@ func (g *Grapher) classify(_payload interface{}) (interface{}, error) {
 		// stop if id is already in trail, no loop loading
 		for _, t := range trail {
 			if t == r {
-				log.Infof("Ignoring %d cause loop detected in trail %+v", t, trail)
+				log.Debugf("Ignoring %d cause loop detected in trail %+v", t, trail)
+				continue
+			}
+			exist, loaded := g.loaded(r)
+			if exist && loaded {
+				log.Debugf("Ignoring %d exists and loaded", id)
 				continue
 			}
 
