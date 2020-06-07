@@ -88,11 +88,27 @@ func (wg *WikibookGen) QueueGenerationJob(subject, model, lang string) (string, 
 		return "", err
 	}
 
+	if uuid, err := wg.LoadWikibook(subject, model, lang); err == nil {
+		return uuid, nil
+	}
+
 	query := `INSERT INTO job (subject, model, creation_date, status, language) VALUES ($1, $2, NOW(), $3, $4) RETURNING id`
 
 	var id string
 	err = wg.db.QueryRow(query, subject, model, CREATED, lang).Scan(&id)
 	return id, err
+}
+
+func (wg *WikibookGen) LoadWikibook(subject, model, lang string) (string, error) {
+	query := `SELECT id FROM wikibook WHERE subject = $1 AND model = $2 AND lang = $3`
+
+	var id string
+	err := wg.db.QueryRow(query, subject, model, lang).Scan(&id)
+	if err != nil {
+		return id, err
+	}
+
+	return id, nil
 }
 
 func (wg *WikibookGen) ValidateModel(s string) error {
@@ -136,6 +152,28 @@ func (wg *WikibookGen) Load(uuid string) (*Wikibook, error) {
 	return nil, nil
 }
 
-func (wg *WikibookGen) List() ([]*Wikibook, error) {
-	return nil, nil
+func (wg *WikibookGen) List(page int64, size int64, language string) ([]*Wikibook, error) {
+	limit := size
+	offset := (page - 1) * size
+
+	query := `SELECT id, subject, model, language, pages FROM wikibook OFFSET $1 LIMIT $2`
+	rows, err := wg.db.Query(query, offset, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var books []*Wikibook
+	for rows.Next() {
+		b := &Wikibook{}
+
+		err = rows.Scan(&b.Uuid, &b.Subject, &b.Model, &b.Language, &b.Pages)
+		if err != nil {
+			return nil, err
+		}
+
+		books = append(books, b)
+	}
+
+	return books, nil
 }

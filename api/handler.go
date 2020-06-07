@@ -38,7 +38,7 @@ func orderStatusHandler(ctx context.Context, req *OrderStatusRequest) (*OrderSta
 }
 
 func listWikibookHandler(ctx context.Context, req *ListWikibookRequest) (*ListWikibookResponse, error) {
-	list, err := WG(ctx).List()
+	list, err := WG(ctx).List(req.Page, req.Size, req.Language)
 	if err != nil {
 		return nil, err
 	}

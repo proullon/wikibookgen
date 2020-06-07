@@ -38,8 +38,10 @@ func (o *V1) Order(l Loader, j Job, g graph.Directed, clusters *Cluster) (*Wikib
 	}
 
 	wikibook := &Wikibook{
-		Subject: j.Subject,
-		Title:   j.Subject,
+		Subject:  j.Subject,
+		Title:    j.Subject,
+		Language: j.Language,
+		Pages:    int64(len(clusters.Members)),
 	}
 	volume := &Volume{
 		Title: j.Subject,

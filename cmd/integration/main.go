@@ -25,6 +25,10 @@ var tt = []test{
 		Name: "Order",
 		Test: testOrder,
 	},
+	{
+		Name: "ListBook",
+		Test: testListBook,
+	},
 	/*
 		{
 			Name: "Clustering",
@@ -77,6 +81,39 @@ func testOrder() error {
 	}
 	if orderID == "" {
 		return fmt.Errorf("Order(%s): invalid uuid", subject)
+	}
+
+	fakeOrderID := "invaliduuid"
+	_, _, err = wikibookgen.OrderStatus(fakeOrderID)
+	if err == nil {
+		return fmt.Errorf("Expected error with OrderStatus(%s)", fakeOrderID)
+	}
+
+	status, uuid, err := wikibookgen.OrderStatus(orderID)
+	if err != nil {
+		return fmt.Errorf("OrderStatus(%s): %s", orderID, err)
+	}
+	fmt.Printf("Status:%s UUID:%s\n", status, uuid)
+
+	return nil
+}
+
+func testListBook() error {
+	var page int64 = 1
+	var size int64 = 30
+	lang := `fr`
+
+	list, err := wikibookgen.ListWikibook(page, size, lang)
+	if err != nil {
+		return err
+	}
+
+	if len(list) == 0 {
+		return fmt.Errorf("ListWikibook: empty list")
+	}
+
+	for _, l := range list {
+		fmt.Printf("- %v\n", l)
 	}
 
 	return nil

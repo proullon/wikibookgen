@@ -36,7 +36,7 @@ service wikibookgen {
   
   rpc ListWikibook(ListWikibookRequest) returns (ListWikibookResponse) {
     option (google.api.http) ={
-      get: "/wikibook"
+      get: "/wikibook?page={page}&size={size}&language={language}"
     };
   }
   
@@ -113,6 +113,9 @@ message GetWikibookResponse {
 }
 
 message ListWikibookRequest {
+  int64 page      = 1;
+  int64 size      = 2;
+  string language = 3;
 }
 
 message ListWikibookResponse {

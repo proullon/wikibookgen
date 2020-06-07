@@ -54,7 +54,7 @@ func ListenAndServe(ctx context.Context, port string) error {
 	HandleFunc("GET", strings.Split("/status", "?")[0], wrapstatus(ctx, decoder))
 	HandleFunc("POST", strings.Split("/order", "?")[0], wraporder(ctx, decoder))
 	HandleFunc("GET", strings.Split("/order/{id}", "?")[0], wraporderStatus(ctx, decoder))
-	HandleFunc("GET", strings.Split("/wikibook", "?")[0], wraplistWikibook(ctx, decoder))
+	HandleFunc("GET", strings.Split("/wikibook?page={page}&size={size}&language={language}", "?")[0], wraplistWikibook(ctx, decoder))
 	HandleFunc("GET", strings.Split("/wikibook/{id}", "?")[0], wrapgetWikibook(ctx, decoder))
 	HandleFunc("GET", strings.Split("/wikibook/{id}/download", "?")[0], wrapdownloadWikibook(ctx, decoder))
 
@@ -185,7 +185,7 @@ func wraplistWikibook(ctx context.Context, decoder httpDecoder) func(w http.Resp
 	f := func(w http.ResponseWriter, r *http.Request) {
 		i, err := decoder.DecodeListWikibookRequest(r)
 		if err != nil {
-			log.Errorf("GET /wikibook: %s\n", err)
+			log.Errorf("GET /wikibook?page={page}&size={size}&language={language}: %s\n", err)
 			w.WriteHeader(500)
 			return
 		}
@@ -201,14 +201,14 @@ func wraplistWikibook(ctx context.Context, decoder httpDecoder) func(w http.Resp
 		}
 
 		if err != nil {
-			log.Errorf("GET /wikibook: %s\n", err)
+			log.Errorf("GET /wikibook?page={page}&size={size}&language={language}: %s\n", err)
 			w.WriteHeader(500)
 			return
 		}
 
 		data, err := json.Marshal(resp)
 		if err != nil {
-			log.Errorf("GET /wikibook: %s\n", err)
+			log.Errorf("GET /wikibook?page={page}&size={size}&language={language}: %s\n", err)
 			w.WriteHeader(500)
 			return
 		}

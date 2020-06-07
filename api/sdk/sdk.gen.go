@@ -122,11 +122,12 @@ func Status() (status []string, err error) {
 }
 
 // Order : POST /order
-func Order(subject_ string, model_ string) (uuid string, err error) {
+func Order(subject_ string, model_ string, language_ string) (uuid string, err error) {
 
 	in := &OrderRequest{
-		Subject: subject_,
-		Model:   model_,
+		Subject:  subject_,
+		Model:    model_,
+		Language: language_,
 	}
 
 	var out *OrderResponse
@@ -166,10 +167,14 @@ func OrderStatus(uuid_ string) (status string, wikibookUuid string, err error) {
 
 }
 
-// ListWikibook : GET /wikibook
-func ListWikibook() (wikibooks []*Wikibook, err error) {
+// ListWikibook : GET /wikibook?page={page}&size={size}&language={language}
+func ListWikibook(page_ int64, size_ int64, language_ string) (wikibooks []*Wikibook, err error) {
 
-	in := &ListWikibookRequest{}
+	in := &ListWikibookRequest{
+		Page:     page_,
+		Size:     size_,
+		Language: language_,
+	}
 
 	var out *ListWikibookResponse
 	_ = out
@@ -252,8 +257,9 @@ func httpOrder(in *OrderRequest, baseAddress, token string) (out *OrderResponse,
 
 	path := "/order"
 	placeholders := map[string]string{
-		"subject": fmt.Sprintf("%v", in.Subject),
-		"model":   fmt.Sprintf("%v", in.Model),
+		"subject":  fmt.Sprintf("%v", in.Subject),
+		"model":    fmt.Sprintf("%v", in.Model),
+		"language": fmt.Sprintf("%v", in.Language),
 	}
 	for k, v := range placeholders {
 		path = strings.Replace(path, "{"+k+"}", v, -1)
@@ -280,11 +286,15 @@ func httpOrderStatus(in *OrderStatusRequest, baseAddress, token string) (out *Or
 	return
 }
 
-// ListWikibook : GET /wikibook
+// ListWikibook : GET /wikibook?page={page}&size={size}&language={language}
 func httpListWikibook(in *ListWikibookRequest, baseAddress, token string) (out *ListWikibookResponse, err error) {
 
-	path := "/wikibook"
-	placeholders := map[string]string{}
+	path := "/wikibook?page={page}&size={size}&language={language}"
+	placeholders := map[string]string{
+		"page":     fmt.Sprintf("%v", in.Page),
+		"size":     fmt.Sprintf("%v", in.Size),
+		"language": fmt.Sprintf("%v", in.Language),
+	}
 	for k, v := range placeholders {
 		path = strings.Replace(path, "{"+k+"}", v, -1)
 	}
@@ -328,12 +338,13 @@ func httpDownloadWikibook(in *DownloadWikibookRequest, baseAddress, token string
 }
 
 type Wikibook struct {
-	Uuid    string    `json:"uuid"`
-	Subject string    `json:"subject"`
-	Model   string    `json:"model"`
-	Title   string    `json:"title"`
-	Pages   int64     `json:"pages"`
-	Volumes []*Volume `json:"volumes"`
+	Uuid     string    `json:"uuid"`
+	Subject  string    `json:"subject"`
+	Model    string    `json:"model"`
+	Language string    `json:"language"`
+	Title    string    `json:"title"`
+	Pages    int64     `json:"pages"`
+	Volumes  []*Volume `json:"volumes"`
 }
 
 type Volume struct {
@@ -359,8 +370,9 @@ type Void struct {
 }
 
 type OrderRequest struct {
-	Subject string `json:"subject"`
-	Model   string `json:"model"`
+	Subject  string `json:"subject"`
+	Model    string `json:"model"`
+	Language string `json:"language"`
 }
 
 type OrderResponse struct {
@@ -385,6 +397,9 @@ type GetWikibookResponse struct {
 }
 
 type ListWikibookRequest struct {
+	Page     int64  `json:"page"`
+	Size     int64  `json:"size"`
+	Language string `json:"language"`
 }
 
 type ListWikibookResponse struct {

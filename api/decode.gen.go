@@ -72,6 +72,16 @@ func (d *defaultDecoder) DecodeOrderRequest(r *http.Request) (interface{}, error
 		}
 	}
 
+	if stringvar, ok := vars["language"]; ok {
+		if err := convertTYPE_STRING(stringvar, &req.Language); err != nil {
+			return nil, fmt.Errorf("%s: %s", "language", err)
+		}
+	} else if stringvar := r.FormValue("language"); stringvar != "" {
+		if err := convertTYPE_STRING(stringvar, &req.Language); err != nil {
+			return nil, fmt.Errorf("%s: %s", "language", err)
+		}
+	}
+
 	return req, nil
 }
 
@@ -101,6 +111,36 @@ func (d *defaultDecoder) DecodeListWikibookRequest(r *http.Request) (interface{}
 	r.ParseForm()
 
 	req := &ListWikibookRequest{}
+
+	if stringvar, ok := vars["page"]; ok {
+		if err := convertTYPE_INT64(stringvar, &req.Page); err != nil {
+			return nil, fmt.Errorf("%s: %s", "page", err)
+		}
+	} else if stringvar := r.FormValue("page"); stringvar != "" {
+		if err := convertTYPE_INT64(stringvar, &req.Page); err != nil {
+			return nil, fmt.Errorf("%s: %s", "page", err)
+		}
+	}
+
+	if stringvar, ok := vars["size"]; ok {
+		if err := convertTYPE_INT64(stringvar, &req.Size); err != nil {
+			return nil, fmt.Errorf("%s: %s", "size", err)
+		}
+	} else if stringvar := r.FormValue("size"); stringvar != "" {
+		if err := convertTYPE_INT64(stringvar, &req.Size); err != nil {
+			return nil, fmt.Errorf("%s: %s", "size", err)
+		}
+	}
+
+	if stringvar, ok := vars["language"]; ok {
+		if err := convertTYPE_STRING(stringvar, &req.Language); err != nil {
+			return nil, fmt.Errorf("%s: %s", "language", err)
+		}
+	} else if stringvar := r.FormValue("language"); stringvar != "" {
+		if err := convertTYPE_STRING(stringvar, &req.Language); err != nil {
+			return nil, fmt.Errorf("%s: %s", "language", err)
+		}
+	}
 
 	return req, nil
 }

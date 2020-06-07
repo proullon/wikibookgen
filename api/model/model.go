@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"gonum.org/v1/gonum/graph"

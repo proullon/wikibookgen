@@ -1,12 +1,13 @@
 package model
 
 type Wikibook struct {
-	Uuid    string    `json:"uuid"`
-	Subject string    `json:"subject"`
-	Model   string    `json:"model"`
-	Title   string    `json:"title"`
-	Pages   int64     `json:"pages"`
-	Volumes []*Volume `json:"volumes"`
+	Uuid     string    `json:"uuid"`
+	Subject  string    `json:"subject"`
+	Model    string    `json:"model"`
+	Language string    `json:"language"`
+	Title    string    `json:"title"`
+	Pages    int64     `json:"pages"`
+	Volumes  []*Volume `json:"volumes"`
 }
 
 type Volume struct {
@@ -32,8 +33,9 @@ type Void struct {
 }
 
 type OrderRequest struct {
-	Subject string `json:"subject"`
-	Model   string `json:"model"`
+	Subject  string `json:"subject"`
+	Model    string `json:"model"`
+	Language string `json:"language"`
 }
 
 type OrderResponse struct {
@@ -58,6 +60,9 @@ type GetWikibookResponse struct {
 }
 
 type ListWikibookRequest struct {
+	Page     int64  `json:"page"`
+	Size     int64  `json:"size"`
+	Language string `json:"language"`
 }
 
 type ListWikibookResponse struct {

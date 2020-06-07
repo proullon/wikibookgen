@@ -5,6 +5,7 @@ export class Wikibook {
   uuid: string;
   subject: string;
   model: string;
+  language: string;
   title: string;
   pages: number;
   volumes: Volume[];
@@ -35,6 +36,7 @@ export class Void {
 export class OrderRequest {
   subject: string;
   model: string;
+  language: string;
 }
 
 export class OrderResponse {
@@ -59,6 +61,9 @@ export class GetWikibookResponse {
 }
 
 export class ListWikibookRequest {
+  page: number;
+  size: number;
+  language: string;
 }
 
 export class ListWikibookResponse {
