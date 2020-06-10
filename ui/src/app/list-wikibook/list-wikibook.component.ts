@@ -1,4 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input } from '@angular/core';
+
+import { Wikibook } from '../wikibook';
+import { WikibookgenService } from '../wikibookgen.service'; 
 
 @Component({
   selector: 'app-list-wikibook',
@@ -7,9 +10,20 @@ import { Component, OnInit } from '@angular/core';
 })
 export class ListWikibookComponent implements OnInit {
 
-  constructor() { }
+  @Input() wikibooks: Wikibook[];
+
+  constructor(
+    private wikibookgenService: WikibookgenService,
+  ) { }
 
   ngOnInit() {
+    this.getWikibooks(1, 50, '');
   }
 
+  getWikibooks(page: number, size: number, language: string): void {
+    this.wikibookgenService.listWikibook(page, size, language)
+      .subscribe((wikibooks:Wikibook[]) => {
+        this.wikibooks = wikibooks
+      });
+  }
 }

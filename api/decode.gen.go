@@ -39,6 +39,42 @@ func (d *defaultDecoder) DecodeStatusRequest(r *http.Request) (interface{}, erro
 	return req, nil
 }
 
+func (d *defaultDecoder) DecodeCompleteRequest(r *http.Request) (interface{}, error) {
+	vars := mux.Vars(r)
+	_ = vars
+	r.ParseForm()
+
+	req := &CompleteRequest{}
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		log.Errorf("POST /complete: %s\n", err)
+		return nil, ErrBadRequest
+	}
+
+	if stringvar, ok := vars["value"]; ok {
+		if err := convertTYPE_STRING(stringvar, &req.Value); err != nil {
+			return nil, fmt.Errorf("%s: %s", "value", err)
+		}
+	} else if stringvar := r.FormValue("value"); stringvar != "" {
+		if err := convertTYPE_STRING(stringvar, &req.Value); err != nil {
+			return nil, fmt.Errorf("%s: %s", "value", err)
+		}
+	}
+
+	if stringvar, ok := vars["language"]; ok {
+		if err := convertTYPE_STRING(stringvar, &req.Language); err != nil {
+			return nil, fmt.Errorf("%s: %s", "language", err)
+		}
+	} else if stringvar := r.FormValue("language"); stringvar != "" {
+		if err := convertTYPE_STRING(stringvar, &req.Language); err != nil {
+			return nil, fmt.Errorf("%s: %s", "language", err)
+		}
+	}
+
+	return req, nil
+}
+
 func (d *defaultDecoder) DecodeOrderRequest(r *http.Request) (interface{}, error) {
 	vars := mux.Vars(r)
 	_ = vars

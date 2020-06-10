@@ -121,6 +121,29 @@ func Status() (status []string, err error) {
 
 }
 
+// Complete : POST /complete
+func Complete(value_ string, language_ string) (titles []string, err error) {
+
+	in := &CompleteRequest{
+		Value:    value_,
+		Language: language_,
+	}
+
+	var out *CompleteResponse
+	_ = out
+
+	switch mode {
+	case HTTP:
+		out, err = httpComplete(in, endpoint, token)
+	}
+	if err != nil {
+		return
+	}
+
+	return out.Titles, nil
+
+}
+
 // Order : POST /order
 func Order(subject_ string, model_ string, language_ string) (uuid string, err error) {
 
@@ -249,6 +272,23 @@ func httpStatus(in *Void, baseAddress, token string) (out *StatusResponse, err e
 
 	out = &StatusResponse{}
 	err = request("GET", path, in, out)
+	return
+}
+
+// Complete : POST /complete
+func httpComplete(in *CompleteRequest, baseAddress, token string) (out *CompleteResponse, err error) {
+
+	path := "/complete"
+	placeholders := map[string]string{
+		"value":    fmt.Sprintf("%v", in.Value),
+		"language": fmt.Sprintf("%v", in.Language),
+	}
+	for k, v := range placeholders {
+		path = strings.Replace(path, "{"+k+"}", v, -1)
+	}
+
+	out = &CompleteResponse{}
+	err = request("POST", path, in, out)
 	return
 }
 
@@ -386,6 +426,15 @@ type OrderStatusRequest struct {
 type OrderStatusResponse struct {
 	Status       string `json:"status"`
 	WikibookUuid string `json:"wikibook_uuid"`
+}
+
+type CompleteRequest struct {
+	Value    string `json:"value"`
+	Language string `json:"language"`
+}
+
+type CompleteResponse struct {
+	Titles []string `json:"titles"`
 }
 
 type GetWikibookRequest struct {

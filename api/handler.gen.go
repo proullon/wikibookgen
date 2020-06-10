@@ -52,6 +52,7 @@ func ListenAndServe(ctx context.Context, port string) error {
 	var decoder httpDecoder
 
 	HandleFunc("GET", strings.Split("/status", "?")[0], wrapstatus(ctx, decoder))
+	HandleFunc("POST", strings.Split("/complete", "?")[0], wrapcomplete(ctx, decoder))
 	HandleFunc("POST", strings.Split("/order", "?")[0], wraporder(ctx, decoder))
 	HandleFunc("GET", strings.Split("/order/{id}", "?")[0], wraporderStatus(ctx, decoder))
 	HandleFunc("GET", strings.Split("/wikibook?page={page}&size={size}&language={language}", "?")[0], wraplistWikibook(ctx, decoder))
@@ -92,6 +93,45 @@ func wrapstatus(ctx context.Context, decoder httpDecoder) func(w http.ResponseWr
 		data, err := json.Marshal(resp)
 		if err != nil {
 			log.Errorf("GET /status: %s\n", err)
+			w.WriteHeader(500)
+			return
+		}
+
+		w.Write(data)
+	}
+
+	return f
+}
+
+func wrapcomplete(ctx context.Context, decoder httpDecoder) func(w http.ResponseWriter, r *http.Request) {
+
+	f := func(w http.ResponseWriter, r *http.Request) {
+		i, err := decoder.DecodeCompleteRequest(r)
+		if err != nil {
+			log.Errorf("POST /complete: %s\n", err)
+			w.WriteHeader(500)
+			return
+		}
+
+		req := i.(*CompleteRequest)
+
+		ctx = context.WithValue(ctx, "w", w)
+		ctx = context.WithValue(ctx, "r", r)
+		resp, err := completeHandler(ctx, req)
+		if err == nil && resp == nil {
+			// Nothing to do here
+			return
+		}
+
+		if err != nil {
+			log.Errorf("POST /complete: %s\n", err)
+			w.WriteHeader(500)
+			return
+		}
+
+		data, err := json.Marshal(resp)
+		if err != nil {
+			log.Errorf("POST /complete: %s\n", err)
 			w.WriteHeader(500)
 			return
 		}

@@ -1,3 +1,27 @@
 <p>
   list-wikibook works!
 </p>
+
+<div>
+<table class=".table table">
+  <thead>
+    <tr>
+      <th scope="col">#</th>
+      <th scope="col">Name</th>
+      <th scope="col">Description</th>
+      <th scope="col">Options</th>
+    </tr>
+  </thead>
+  <tbody>
+  <tr *ngFor="let w of wikibooks">
+  <td>{{w.uuid}}</td>
+  <td>{{w.subject}} <div *ngIf="w.language">({{w.language}})</div></td>
+  <td>Pages:{{w.pages}}</td>
+  <td>
+    <a href="/task/{{w.uuid}}/update"><i class="material-icons">edit</i></a>
+    <a href="" onclick="return false;"><i (click)="completeTask(task)" class="material-icons">done</i></a>
+  </td>
+  </tr>
+  </tbody>
+</table>
+</div>

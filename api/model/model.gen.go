@@ -51,6 +51,15 @@ type OrderStatusResponse struct {
 	WikibookUuid string `json:"wikibook_uuid"`
 }
 
+type CompleteRequest struct {
+	Value    string `json:"value"`
+	Language string `json:"language"`
+}
+
+type CompleteResponse struct {
+	Titles []string `json:"titles"`
+}
+
 type GetWikibookRequest struct {
 	Uuid string `json:"uuid"`
 }

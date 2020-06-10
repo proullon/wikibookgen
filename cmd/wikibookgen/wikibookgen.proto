@@ -21,6 +21,12 @@ service wikibookgen {
       get: "/status"
     };  
   }
+
+  rpc Complete(CompleteRequest) returns (CompleteResponse) {
+    option (google.api.http) ={
+      post: "/complete"
+    };
+  }
   
   rpc Order(OrderRequest) returns (OrderResponse) {
     option (google.api.http) ={
@@ -102,6 +108,15 @@ message OrderStatusRequest {
 message OrderStatusResponse {
   string status = 1;
   string wikibook_uuid = 2;
+}
+
+message CompleteRequest {
+  string value    = 1;
+  string language = 2;
+}
+
+message CompleteResponse {
+  repeated string titles = 1;
 }
 
 message GetWikibookRequest {
