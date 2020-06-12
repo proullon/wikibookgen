@@ -33,6 +33,7 @@ type Chapter struct {
 type Generator interface {
 	Generate(Job)
 	Find(string, string) (int64, error)
+	Complete(string, string) ([]string, error)
 }
 
 // Loader defines objects able to retrieve article references
@@ -42,6 +43,7 @@ type Loader interface {
 	LoadOutgoingReferences(int64) ([]int64, error)
 	ID(string) (int64, error)
 	Title(int64) (string, error)
+	Search(string) ([]string, error)
 }
 
 // Classifier interface defines objects able to select

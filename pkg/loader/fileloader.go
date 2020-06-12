@@ -73,3 +73,8 @@ func (l *FileLoader) Title(id int64) (string, error) {
 
 	return "", fmt.Errorf("not found")
 }
+
+func (l *FileLoader) Search(value string) ([]string, error) {
+	titles := make([]string, 0)
+	return titles, nil
+}

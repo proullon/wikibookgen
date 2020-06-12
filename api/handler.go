@@ -14,6 +14,17 @@ func statusHandler(ctx context.Context, v *Void) (*StatusResponse, error) {
 	return &StatusResponse{}, nil
 }
 
+func completeHandler(ctx context.Context, req *CompleteRequest) (*CompleteResponse, error) {
+	titles, err := WG(ctx).Complete(req.Value, req.Language)
+	if err != nil {
+		return nil, err
+	}
+
+	return &CompleteResponse{
+		Titles: titles,
+	}, nil
+}
+
 func orderHandler(ctx context.Context, req *OrderRequest) (*OrderResponse, error) {
 	uuid, err := WG(ctx).QueueGenerationJob(req.Subject, req.Model, "fr")
 	if err != nil {

@@ -153,3 +153,13 @@ func (g *V1) Find(s string, lang string) (int64, error) {
 
 	return l.ID(s)
 }
+
+func (g *V1) Complete(value string, language string) ([]string, error) {
+
+	l, ok := g.loaders[language]
+	if !ok {
+		return nil, fmt.Errorf("no loader available for lang '%s'", language)
+	}
+
+	return l.Search(value)
+}

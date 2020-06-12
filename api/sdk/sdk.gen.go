@@ -168,7 +168,7 @@ func Order(subject_ string, model_ string, language_ string) (uuid string, err e
 
 }
 
-// OrderStatus : GET /order/{id}
+// OrderStatus : GET /order/{uuid}
 func OrderStatus(uuid_ string) (status string, wikibookUuid string, err error) {
 
 	in := &OrderStatusRequest{
@@ -214,7 +214,7 @@ func ListWikibook(page_ int64, size_ int64, language_ string) (wikibooks []*Wiki
 
 }
 
-// GetWikibook : GET /wikibook/{id}
+// GetWikibook : GET /wikibook/{uuid}
 func GetWikibook(uuid_ string) (wikibook *Wikibook, err error) {
 
 	in := &GetWikibookRequest{
@@ -236,7 +236,7 @@ func GetWikibook(uuid_ string) (wikibook *Wikibook, err error) {
 
 }
 
-// DownloadWikibook : GET /wikibook/{id}/download
+// DownloadWikibook : GET /wikibook/{uuid}/download
 func DownloadWikibook(uuid_ string, format_ string) (err error) {
 
 	in := &DownloadWikibookRequest{
@@ -310,10 +310,10 @@ func httpOrder(in *OrderRequest, baseAddress, token string) (out *OrderResponse,
 	return
 }
 
-// OrderStatus : GET /order/{id}
+// OrderStatus : GET /order/{uuid}
 func httpOrderStatus(in *OrderStatusRequest, baseAddress, token string) (out *OrderStatusResponse, err error) {
 
-	path := "/order/{id}"
+	path := "/order/{uuid}"
 	placeholders := map[string]string{
 		"uuid": fmt.Sprintf("%v", in.Uuid),
 	}
@@ -344,10 +344,10 @@ func httpListWikibook(in *ListWikibookRequest, baseAddress, token string) (out *
 	return
 }
 
-// GetWikibook : GET /wikibook/{id}
+// GetWikibook : GET /wikibook/{uuid}
 func httpGetWikibook(in *GetWikibookRequest, baseAddress, token string) (out *GetWikibookResponse, err error) {
 
-	path := "/wikibook/{id}"
+	path := "/wikibook/{uuid}"
 	placeholders := map[string]string{
 		"uuid": fmt.Sprintf("%v", in.Uuid),
 	}
@@ -360,10 +360,10 @@ func httpGetWikibook(in *GetWikibookRequest, baseAddress, token string) (out *Ge
 	return
 }
 
-// DownloadWikibook : GET /wikibook/{id}/download
+// DownloadWikibook : GET /wikibook/{uuid}/download
 func httpDownloadWikibook(in *DownloadWikibookRequest, baseAddress, token string) (out *Void, err error) {
 
-	path := "/wikibook/{id}/download"
+	path := "/wikibook/{uuid}/download"
 	placeholders := map[string]string{
 		"uuid":   fmt.Sprintf("%v", in.Uuid),
 		"format": fmt.Sprintf("%v", in.Format),

@@ -6,7 +6,7 @@
 <table class=".table table">
   <thead>
     <tr>
-      <th scope="col">#</th>
+      <th scope="col">Title</th>
       <th scope="col">Name</th>
       <th scope="col">Description</th>
       <th scope="col">Options</th>
@@ -14,7 +14,7 @@
   </thead>
   <tbody>
   <tr *ngFor="let w of wikibooks">
-  <td>{{w.uuid}}</td>
+  <td><a href="/wikibook/{{w.uuid}}">{{w.subject}}</a></td>
   <td>{{w.subject}} <div *ngIf="w.language">({{w.language}})</div></td>
   <td>Pages:{{w.pages}}</td>
   <td>

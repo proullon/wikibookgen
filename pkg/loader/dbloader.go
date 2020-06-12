@@ -2,6 +2,7 @@ package loader
 
 import (
 	"database/sql"
+	"fmt"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -117,4 +118,26 @@ func (l *DBLoader) title(id int64) (string, error) {
 	var title string
 	err := l.db.QueryRow(query, id).Scan(&title)
 	return title, err
+}
+
+func (l *DBLoader) Search(value string) ([]string, error) {
+	query := `SELECT title FROM page WHERE lower_title LIKE $1`
+	rows, err := l.db.Query(query, fmt.Sprintf("%s%%", value))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var titles []string
+	for rows.Next() {
+		var t string
+		err = rows.Scan(&t)
+		if err != nil {
+			return nil, err
+		}
+
+		titles = append(titles, t)
+	}
+
+	return titles, nil
 }

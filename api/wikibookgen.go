@@ -2,6 +2,7 @@ package wikibookgen
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -149,10 +150,39 @@ func (wg *WikibookGen) LoadOrder(uuid string) (string, string, error) {
 }
 
 func (wg *WikibookGen) Load(uuid string) (*Wikibook, error) {
-	return nil, nil
+	log.Infof("Loading %s", uuid)
+	query := `SELECT subject, model, language, pages, table_of_content FROM wikibook WHERE id = $1`
+
+	w := &Wikibook{Uuid: uuid}
+	var subject, model, language, toc string
+	var pages int64
+	err := wg.db.QueryRow(query, uuid).Scan(&subject, &model, &language, &pages, &toc)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal([]byte(toc), w)
+	if err != nil {
+		return nil, err
+	}
+
+	w.Subject = subject
+	w.Model = model
+	w.Language = language
+	w.Pages = pages
+
+	return w, nil
 }
 
 func (wg *WikibookGen) List(page int64, size int64, language string) ([]*Wikibook, error) {
+
+	if size > 200 {
+		size = 200
+	}
+	if page < 1 {
+		page = 1
+	}
+
 	limit := size
 	offset := (page - 1) * size
 
@@ -176,4 +206,8 @@ func (wg *WikibookGen) List(page int64, size int64, language string) ([]*Wikiboo
 	}
 
 	return books, nil
+}
+
+func (wg *WikibookGen) Complete(value string, language string) ([]string, error) {
+	return wg.gen.Complete(value, language)
 }

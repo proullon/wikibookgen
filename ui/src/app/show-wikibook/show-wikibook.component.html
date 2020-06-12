@@ -1,0 +1,33 @@
+
+<h1>Title: {{wikibook.title}}</h1>
+
+<h2>Description</h2>
+
+Wikibook of type <b>{{wikibook.model}}</b>. {{wikibook.pages}} pages.
+
+<h2>Table of content</h2>
+
+<mat-list>
+  <mat-list-item *ngFor="let chapter of wikibook.volumes[0].chapters"> {{chapter.title}} </mat-list-item>
+</mat-list>
+
+<h2>Table of content BIS</h2>
+
+<mat-tree [dataSource]="dataSource" [treeControl]="treeControl">
+  <!-- This is the tree node template for leaf nodes -->
+  <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding>
+    <!-- use a disabled button to provide padding for tree leaf -->
+    <button mat-icon-button disabled></button>
+    {{node.title}}
+  </mat-tree-node>
+  <!-- This is the tree node template for expandable nodes -->
+  <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding>
+    <button mat-icon-button matTreeNodeToggle
+            [attr.aria-label]="'toggle ' + node.title">
+      <mat-icon class="mat-icon-rtl-mirror">
+        {{treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
+      </mat-icon>
+    </button>
+    {{node.title}}
+  </mat-tree-node>
+</mat-tree>

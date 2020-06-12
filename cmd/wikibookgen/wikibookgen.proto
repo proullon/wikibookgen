@@ -9,10 +9,11 @@ import "google/api/annotations.proto";
 /*
 ** GET  /status
 ** POST /order
+** POST /complete
 ** GET  /order/{id}
 ** GET  /wikibook
-** GET  /wikibook/{id}
-** GET  /wikibook/{id}/download
+** GET  /wikibook/{uuid}
+** GET  /wikibook/{uuid}/download
 */
 service wikibookgen {
 
@@ -36,7 +37,7 @@ service wikibookgen {
   
   rpc OrderStatus(OrderStatusRequest) returns (OrderStatusResponse) {
     option (google.api.http) ={
-      get: "/order/{id}"
+      get: "/order/{uuid}"
     };
   }
   
@@ -48,13 +49,13 @@ service wikibookgen {
   
   rpc GetWikibook(GetWikibookRequest) returns (GetWikibookResponse) {
     option (google.api.http) ={
-      get: "/wikibook/{id}"
+      get: "/wikibook/{uuid}"
     };
   }
   
   rpc DownloadWikibook(DownloadWikibookRequest) returns (Void) {
     option (google.api.http) ={
-      get: "/wikibook/{id}/download"
+      get: "/wikibook/{uuid}/download"
     };
   }
 }

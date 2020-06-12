@@ -1,0 +1,21 @@
+<h1>Generate your own book</h1>
+<p>order-wikibook works!</p>
+
+<form class="order-form">
+  <mat-form-field>
+    <input type="text"
+           placeholder="Enter wikipedia article name"
+           aria-label="Text"
+           matInput
+           [formControl]="myControl"
+           [matAutocomplete]="auto">
+    <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
+      <mat-option *ngFor="let option of filteredOptions$ | async" [value]="option">
+        {{option}}
+      </mat-option>
+    </mat-autocomplete>
+  </mat-form-field>
+  
+  <button mat-stroked-button (click)="orderWikibook()">Generate!</button>
+
+</form>

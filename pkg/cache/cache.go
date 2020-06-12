@@ -129,3 +129,7 @@ func (l *LocalCacheLoader) Title(id int64) (string, error) {
 
 	return title, err
 }
+
+func (l *LocalCacheLoader) Search(value string) ([]string, error) {
+	return l.src.Search(value)
+}
