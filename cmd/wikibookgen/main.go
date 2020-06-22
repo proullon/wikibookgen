@@ -132,8 +132,7 @@ func start(c *cli.Context) error {
 	cacheloader = cache.NewLocalCacheLoader(dbloader)
 	loadermap["en"] = cacheloader
 
-	// TODO: classifier should havve loader as LoadGraph argument
-	cla, err := classifier.NewV1(loadermap["fr"])
+	cla, err := classifier.NewV1()
 	if err != nil {
 		return fmt.Errorf("classifier.NewV1: %s", err)
 	}

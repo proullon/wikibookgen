@@ -7,9 +7,14 @@ import { MatTreeModule, MatTreeNestedDataSource } from '@angular/material/tree';
 import { Wikibook } from '../wikibook';
 import { WikibookgenService } from '../wikibookgen.service'; 
 
-interface WikibookNode {
+class WikibookNode {
   title: string;
-  articles?: WikibookNode[];
+  nodes?: WikibookNode[];
+
+  constructor(title: string) {
+    this.title = title;
+    this.nodes = new Array<WikibookNode>();
+  }
 }
 
 const TREE_DATA: WikibookNode[] = [];
@@ -21,7 +26,7 @@ const TREE_DATA: WikibookNode[] = [];
 })
 export class ShowWikibookComponent implements OnInit {
   
-  treeControl = new NestedTreeControl<WikibookNode>(node => node.articles);
+  treeControl = new NestedTreeControl<WikibookNode>(node => node.nodes);
   dataSource = new MatTreeNestedDataSource<WikibookNode>();
 
   @Input() wikibook: Wikibook;
@@ -44,9 +49,27 @@ export class ShowWikibookComponent implements OnInit {
       .subscribe((wikibook:Wikibook) => {
         console.log(wikibook);
         this.wikibook = wikibook;
-        this.dataSource.data = wikibook.volumes[0].chapters;
+        this.dataSource.data = this.wikibookToWikibookNode(wikibook);
       });
   }
-  
-  hasChild = (_: number, node: WikibookNode) => !!node.articles && node.articles.length > 0;
+ 
+  wikibookToWikibookNode(wikibook: Wikibook): WikibookNode[] {
+    var nodes: Array<WikibookNode> = [];
+
+    for (let ch of wikibook.volumes[0].chapters) {
+      console.log('yaya ' + ch.title);
+      var node = new WikibookNode(ch.title);
+      for (let a of ch.articles) {
+        console.log('page ' + a.title);
+        var n = new WikibookNode(a.title);
+        node.nodes.push(n);
+      }
+      console.log('chapter ' + node.title + ' has ' + node.nodes.length + ' pages');
+      nodes.push(node);
+    }
+    console.log(nodes);
+    return nodes;
+  }
+
+  hasChild = (_: number, node: WikibookNode) => !!node.nodes && node.nodes.length > 0;
 }

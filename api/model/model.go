@@ -50,7 +50,7 @@ type Loader interface {
 // a coherent graph of Wikipedia articles related to
 // given job constraints
 type Classifier interface {
-	LoadGraph(rootID int64, maxSize int64) (graph.Directed, error)
+	LoadGraph(l Loader, rootID int64, maxSize int64) (graph.Directed, error)
 	Version() string
 }
 
@@ -273,6 +273,11 @@ type Cluster struct {
 
 	Members     Component
 	Subclusters []*Cluster
+}
+
+type TestCluster struct {
+	Members     map[int64]*Node
+	Subclusters []*TestCluster
 }
 
 func (c *Cluster) Depth() int {

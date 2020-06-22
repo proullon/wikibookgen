@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"testing"
 
+	"gonum.org/v1/gonum/graph"
+
 	. "github.com/proullon/wikibookgen/api/model"
 	"github.com/proullon/wikibookgen/pkg/classifier"
 	"github.com/proullon/wikibookgen/pkg/loader"
@@ -26,13 +28,29 @@ func LoadCluster() (*Cluster, error) {
 		return nil, err
 	}
 
-	var clusters *Cluster
+	var clusters *TestCluster
 	err = json.Unmarshal(data, &clusters)
 	if err != nil {
 		return nil, err
 	}
 
-	return clusters, nil
+	return ReplaceTestClusterToCluster(clusters), nil
+}
+
+func ReplaceTestClusterToCluster(c *TestCluster) *Cluster {
+	nc := &Cluster{}
+	nc.Members = make(map[int64]graph.Node)
+
+	for k, _ := range c.Members {
+		nc.Members[k] = NewNode(k)
+	}
+
+	for _, s := range c.Subclusters {
+		s2 := ReplaceTestClusterToCluster(s)
+		nc.Subclusters = append(nc.Subclusters, s2)
+	}
+
+	return nc
 }
 
 func TestOrdering(t *testing.T) {

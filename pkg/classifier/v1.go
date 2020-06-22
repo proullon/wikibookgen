@@ -12,7 +12,6 @@ import (
 )
 
 type V1 struct {
-	loader Loader
 }
 
 type Grapher struct {
@@ -20,16 +19,15 @@ type Grapher struct {
 	wp      *workerpool.WorkerPool
 	mu      sync.RWMutex
 	maxsize int64
+	cursize int64
 
 	graph    *simple.DirectedGraph
 	vertices map[int64]*Vertex
 	//root     *Vertex
 }
 
-func NewV1(l Loader) (*V1, error) {
-	c := &V1{
-		loader: l,
-	}
+func NewV1() (*V1, error) {
+	c := &V1{}
 
 	return c, nil
 }
@@ -38,10 +36,10 @@ func (c *V1) Version() string {
 	return "1"
 }
 
-func (c *V1) LoadGraph(rootID int64, maxSize int64) (graph.Directed, error) {
+func (c *V1) LoadGraph(loader Loader, rootID int64, maxSize int64) (graph.Directed, error) {
 	var err error
 
-	l := Grapher{loader: c.loader, maxsize: maxSize}
+	l := Grapher{loader: loader, maxsize: maxSize}
 	l.vertices = make(map[int64]*Vertex)
 	l.graph = simple.NewDirectedGraph()
 
@@ -220,8 +218,7 @@ func (g *Grapher) classify(_payload interface{}) (interface{}, error) {
 func (g *Grapher) Size() int64 {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	n := g.graph.Nodes().Len()
-	return int64(n)
+	return g.cursize
 }
 
 // addToGraph needs to go through all references and referers, try to find them in vertices map
@@ -261,7 +258,7 @@ func (g *Grapher) addToGraph(v *Vertex) {
 		if refID == v.ID {
 			continue // avoid self edge
 		}
-		if g.maxsize > 0 && int64(g.graph.Nodes().Len()) >= g.maxsize {
+		if g.maxsize > 0 && g.cursize >= g.maxsize {
 			return
 		}
 
@@ -274,7 +271,7 @@ func (g *Grapher) addToGraph(v *Vertex) {
 		if refID == v.ID {
 			continue // avoid self edge
 		}
-		if g.maxsize > 0 && int64(g.graph.Nodes().Len()) >= g.maxsize {
+		if g.maxsize > 0 && g.cursize >= g.maxsize {
 			return
 		}
 		from := g.getOrNew(refID)
@@ -289,6 +286,7 @@ func (g *Grapher) getOrNew(id int64) graph.Node {
 	if n == nil {
 		n = NewNode(id)
 		g.graph.AddNode(n)
+		g.cursize++
 	}
 
 	return n

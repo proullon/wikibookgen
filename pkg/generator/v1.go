@@ -64,7 +64,7 @@ func (g *V1) generate(j Job) error {
 	}
 
 	begin := time.Now()
-	graph, err := g.classifier.LoadGraph(id, g.clusterer.MaxSize(j))
+	graph, err := g.classifier.LoadGraph(loader, id, g.clusterer.MaxSize(j))
 	if err != nil {
 		return err
 	}

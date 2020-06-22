@@ -22,7 +22,7 @@ export class OrderWikibookComponent implements OnInit {
     private wikibookgenService: WikibookgenService,
     private location: Location,
   ) {
-    this.language = 'fr';
+    this.language = 'en';
     this.model = 'tour';
   }
   

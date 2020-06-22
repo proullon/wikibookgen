@@ -26,7 +26,7 @@ func completeHandler(ctx context.Context, req *CompleteRequest) (*CompleteRespon
 }
 
 func orderHandler(ctx context.Context, req *OrderRequest) (*OrderResponse, error) {
-	uuid, err := WG(ctx).QueueGenerationJob(req.Subject, req.Model, "fr")
+	uuid, err := WG(ctx).QueueGenerationJob(req.Subject, req.Model, req.Language)
 	if err != nil {
 		return nil, err
 	}
