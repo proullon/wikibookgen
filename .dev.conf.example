@@ -2,3 +2,4 @@ CRDB_HOST=db.example.com
 DOCKER_NAME=wikibookgen
 DOCKER_IMAGE=proullon/wikibookgen
 MOUNT_POINT=/home/user/foo
+EXPOSED_PORT=8090
