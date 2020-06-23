@@ -5,6 +5,7 @@ FOLDER=`cat .dev.conf | grep FOLDER | cut -d '=' -f 2`
 LANGUAGE=`cat .dev.conf | grep LANGUAGE | cut -d '=' -f 2`
 DB_NAME=`cat .dev.conf | grep DB_NAME | cut -d '=' -f 2`
 MOUNT_POINT=`cat .dev.conf | grep MOUNT_POINT | cut -d '=' -f 2`
+EXPOSED_PORT=`cat .dev.conf | grep EXPOSED_PORT | cut -d '=' -f 2`
 
 PROTOC_OPTS ?=		-I/usr/local/include -I./$(PROTO_DIR) -I$(GOPATH) -I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis
 PROTO_TMPL=../genkit
@@ -38,7 +39,7 @@ stop: ## stop docker container
 	docker rm -f $(DOCKER_NAME) || true
 
 run: stop ## start docker container
-	docker run -d --mount type=bind,source=$(MOUNT_POINT),target=/tmp/wikibookgen --name $(DOCKER_NAME) -p 8090:8080 -e CRDB_HOST=$(CRDB_HOST) $(DOCKER_IMAGE):latest
+	docker run -d --mount type=bind,source=$(MOUNT_POINT),target=/tmp/wikibookgen --name $(DOCKER_NAME) -p $(EXPOSED_PORT):8080 -e CRDB_HOST=$(CRDB_HOST) $(DOCKER_IMAGE):latest
 	make -C ui run
 
 logs: ## show docker logs
