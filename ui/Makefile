@@ -22,7 +22,7 @@ build: ## build app
 
 package: ## package docker image
 	@echo "Packaging production"
-	ng build --configuration=production
+#	ng build --configuration=production
 	docker build -t ${IMAGE}:production .
 
 run:
