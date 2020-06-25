@@ -15,6 +15,10 @@ func statusHandler(ctx context.Context, v *Void) (*StatusResponse, error) {
 }
 
 func completeHandler(ctx context.Context, req *CompleteRequest) (*CompleteResponse, error) {
+	if len(req.Value) < 4 {
+		return &CompleteResponse{}, nil
+	}
+
 	titles, err := WG(ctx).Complete(req.Value, req.Language)
 	if err != nil {
 		return nil, err
