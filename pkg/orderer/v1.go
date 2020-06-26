@@ -7,7 +7,6 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"gonum.org/v1/gonum/graph"
-	"gonum.org/v1/gonum/graph/path"
 
 	. "github.com/proullon/wikibookgen/api/model"
 )
@@ -186,11 +185,10 @@ func (o *V1) OrderChapter(g graph.Directed, c *Chapter) {
 
 			g1 := g.Node(c.Articles[i].Id)
 			g2 := g.Node(c.Articles[i-1].Id)
-			ptoi := path.YenKShortestPaths(g, 10, g1, g2)
-			ptoim := path.YenKShortestPaths(g, 10, g2, g1)
-			// if there is more path to article, put it first in chapter
-			if len(ptoi) < len(ptoim) {
-				log.Infof("Swapping %v (%d) and %v (%d)", c.Articles[i], len(ptoi), c.Articles[i-1], len(ptoim))
+
+			// if g1 reference g2 and g2 does not reference g1, g2 should be first
+			if g.Edge(g1.ID(), g2.ID()) != nil && g.Edge(g2.ID(), g1.ID()) == nil {
+				log.Infof("%v reference %v should be first", c.Articles[i], c.Articles[i-1])
 				s := c.Articles[i]
 				c.Articles[i] = c.Articles[i-1]
 				c.Articles[i-1] = s
