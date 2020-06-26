@@ -40,14 +40,12 @@ stop: ## stop docker container
 
 run: stop ## start docker container
 	docker run -d --mount type=bind,source=$(MOUNT_POINT),target=/tmp/wikibookgen --name $(DOCKER_NAME) -p $(EXPOSED_PORT):8080 -e CRDB_HOST=$(CRDB_HOST) $(DOCKER_IMAGE):latest
-	make -C ui run
 
 logs: ## show docker logs
 	docker logs -f $(DOCKER_NAME)
 
 package: ## build docker image
 	docker build -t $(DOCKER_IMAGE):latest .
-	make -C ui package
 
 it: ## run integration tests
 	./integration
