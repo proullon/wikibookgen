@@ -11,7 +11,6 @@ import (
 	"github.com/urfave/cli"
 
 	"github.com/proullon/wikibookgen/api"
-	"github.com/proullon/wikibookgen/pkg/cache"
 	"github.com/proullon/wikibookgen/pkg/classifier"
 	"github.com/proullon/wikibookgen/pkg/clusterer"
 	"github.com/proullon/wikibookgen/pkg/generator"
@@ -125,12 +124,10 @@ func start(c *cli.Context) error {
 	loadermap := make(map[string]Loader)
 
 	dbloader := loader.NewDBLoader(dbfr)
-	cacheloader := cache.NewLocalCacheLoader(dbloader)
-	loadermap["fr"] = cacheloader
+	loadermap["fr"] = dbloader
 
 	dbloader = loader.NewDBLoader(dben)
-	cacheloader = cache.NewLocalCacheLoader(dbloader)
-	loadermap["en"] = cacheloader
+	loadermap["en"] = dbloader
 
 	cla, err := classifier.NewV1()
 	if err != nil {
