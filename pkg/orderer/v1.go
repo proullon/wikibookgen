@@ -137,31 +137,52 @@ func (o *V1) OrderChapters(g graph.Directed, v *Volume) {
 }
 
 func (o *V1) OrderChapter(g graph.Directed, c *Chapter) {
-	for {
-		modified := false
+	sort.Sort(ByReference{g: g, p: c.Articles})
+	/*
+		for {
+			modified := false
 
-		for i := range c.Articles {
-			if i == 0 {
-				continue
+			for i := range c.Articles {
+				if i == 0 {
+					continue
+				}
+
+				g1 := g.Node(c.Articles[i].Id)
+				g2 := g.Node(c.Articles[i-1].Id)
+
+				// if g1 reference g2 and g2 does not reference g1, g2 should be first
+				if g.Edge(g1.ID(), g2.ID()) != nil && g.Edge(g2.ID(), g1.ID()) == nil {
+					log.Infof("%v reference %v should be first", c.Articles[i], c.Articles[i-1])
+					s := c.Articles[i]
+					c.Articles[i] = c.Articles[i-1]
+					c.Articles[i-1] = s
+					modified = true
+				}
 			}
 
-			g1 := g.Node(c.Articles[i].Id)
-			g2 := g.Node(c.Articles[i-1].Id)
-
-			// if g1 reference g2 and g2 does not reference g1, g2 should be first
-			if g.Edge(g1.ID(), g2.ID()) != nil && g.Edge(g2.ID(), g1.ID()) == nil {
-				log.Infof("%v reference %v should be first", c.Articles[i], c.Articles[i-1])
-				s := c.Articles[i]
-				c.Articles[i] = c.Articles[i-1]
-				c.Articles[i-1] = s
-				modified = true
+			if !modified {
+				return
 			}
 		}
+	*/
+}
 
-		if !modified {
-			return
-		}
+type ByReference struct {
+	p []*Page
+	g graph.Graph
+}
+
+func (a ByReference) Len() int      { return len(a.p) }
+func (a ByReference) Swap(i, j int) { a.p[i], a.p[j] = a.p[j], a.p[i] }
+func (a ByReference) Less(i, j int) bool {
+
+	ni := a.p[i].Id
+	nj := a.p[j].Id
+	if a.g.Edge(ni, nj) != nil && a.g.Edge(nj, ni) == nil {
+		return false
 	}
+
+	return true
 }
 
 type BySumReference struct {

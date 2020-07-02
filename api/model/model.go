@@ -226,47 +226,6 @@ func (v *Vertex) Degree() int {
 	return len(v.IncomingEdges) + len(v.OutgoingEdges)
 }
 
-/*
-func (v *Vertex) Edges() []graph.Edge {
-	return nil
-}
-
-func (v *Vertex) SubGraph() graph.Graph {
-	return nil
-}
-*/
-
-/*
-// Graph wraps articles page to help generation
-type Graph struct {
-	TrailCount int
-	Page       *Page
-	Nodes      []*Graph
-}
-
-// Page holds article metadata
-type Page struct {
-	ID         int
-	Title      string
-	LowerTitle string
-	References []*Reference
-}
-
-// Reference between 2 articles
-type Reference struct {
-	PageID      int
-	ReferedPage int
-	Occurence   int
-	Index       int
-	LowerTitle  string
-}
-
-type Cluster struct {
-	Members     []*Graph
-	Subclusters []*Cluster
-}
-*/
-
 type Cluster struct {
 	IncomingEdges []*Vertex `json:"-"`
 	OutgoingEdges []*Vertex `json:"-"`
@@ -380,9 +339,6 @@ func (c Component) Betweenness(g graph.Directed) map[int64]float64 {
 
 	// compute betweenness for component only
 	bvalues := network.Betweenness(cg)
-	for k, v := range bvalues {
-		log.Infof("%v %v", k, v)
-	}
 
 	return bvalues
 }

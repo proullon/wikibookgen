@@ -40,7 +40,7 @@ func (c *V1) Cluster(j Job, rootID int64, g graph.Directed) (*Cluster, error) {
 		maxtime = 5 * time.Minute
 	case TOUR:
 		layer = 2
-		maxtime = 20 * time.Minute
+		maxtime = 60 * time.Minute
 	case ENCYCLOPEDIA:
 		layer = 3
 		maxtime = 120 * time.Minute
