@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"sort"
 
 	log "github.com/sirupsen/logrus"
 	"gonum.org/v1/gonum/graph"
@@ -42,49 +43,6 @@ func (o *V1) Order(l Loader, j Job, g graph.Directed, clusters *Cluster) (*Wikib
 		return nil, err
 	}
 
-	/*
-		wikibook := &Wikibook{
-			Subject:  j.Subject,
-			Title:    j.Subject,
-			Language: j.Language,
-			Pages:    int64(len(clusters.Members)),
-		}
-		volume := &Volume{
-			Title: j.Subject,
-		}
-		wikibook.Volumes = []*Volume{volume}
-
-		for _, cluster := range clusters.Subclusters {
-			chapter := &Chapter{}
-			bvalues := cluster.Members.Betweenness(g)
-			var center int64
-			var centerb float64
-			for id, b := range bvalues {
-				if b > centerb {
-					center = id
-					centerb = b
-				}
-			}
-			chapter.Title = "???"
-			if center > 0 {
-				chapter.Title, err = l.Title(center)
-				if err != nil {
-					return nil, fmt.Errorf("Order Chapter Title(%d): %s", center, err)
-				}
-				log.Infof("Component center is %d with %f !", center, centerb)
-			}
-			for _, n := range cluster.Members {
-				article, err := o.PageThis(l, n)
-				if err != nil {
-					return nil, err
-				}
-				chapter.Articles = append(chapter.Articles, article)
-			}
-
-			volume.Chapters = append(volume.Chapters, chapter)
-		}
-	*/
-
 	for _, v := range wikibook.Volumes {
 		o.OrderChapters(g, v)
 		for _, c := range v.Chapters {
@@ -101,28 +59,31 @@ func (o *V1) GenTour(l Loader, j Job, g graph.Directed, cluster *Cluster) (*Wiki
 		Title:   j.Subject,
 	}
 
-	v, err := o.VolumeThis(l, j, g, cluster)
+	v, pages, err := o.VolumeThis(l, j, g, cluster)
 	if err != nil {
 		return nil, err
 	}
 	wikibook.Volumes = append(wikibook.Volumes, v)
+	wikibook.Pages += int64(pages)
 
 	return wikibook, nil
 }
 
-func (o *V1) VolumeThis(l Loader, j Job, g graph.Directed, cluster *Cluster) (*Volume, error) {
+func (o *V1) VolumeThis(l Loader, j Job, g graph.Directed, cluster *Cluster) (*Volume, int, error) {
 	v := &Volume{Title: j.Subject}
+	var pages int
 
 	for _, cluster := range cluster.Subclusters {
 		c, err := o.ChapterThis(l, g, cluster)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
+		pages += len(c.Articles)
 
 		v.Chapters = append(v.Chapters, c)
 	}
 
-	return v, nil
+	return v, pages, nil
 }
 
 func (o *V1) ChapterThis(l Loader, g graph.Directed, cluster *Cluster) (*Chapter, error) {
@@ -172,6 +133,7 @@ func (o *V1) Center(g graph.Directed, cluster *Cluster) int64 {
 }
 
 func (o *V1) OrderChapters(g graph.Directed, v *Volume) {
+	sort.Sort(BySumReference{g: g, c: v.Chapters})
 }
 
 func (o *V1) OrderChapter(g graph.Directed, c *Chapter) {
@@ -200,4 +162,33 @@ func (o *V1) OrderChapter(g graph.Directed, c *Chapter) {
 			return
 		}
 	}
+}
+
+type BySumReference struct {
+	c []*Chapter
+	g graph.Graph
+}
+
+func (a BySumReference) Len() int      { return len(a.c) }
+func (a BySumReference) Swap(i, j int) { a.c[i], a.c[j] = a.c[j], a.c[i] }
+func (a BySumReference) Less(i, j int) bool {
+
+	var refcountj, refcounti int
+
+	for _, cj := range a.c[j].Articles {
+		for _, ci := range a.c[i].Articles {
+
+			ni := a.g.Node(ci.Id)
+			nj := a.g.Node(cj.Id)
+			if a.g.Edge(ni.ID(), nj.ID()) != nil {
+				refcounti++
+			}
+			if a.g.Edge(nj.ID(), ni.ID()) != nil {
+				refcountj++
+			}
+		}
+	}
+
+	log.Infof("Chapter '%s' has %d references to '%s' / '%s' %d reference to '%s'", a.c[i].Title, refcounti, a.c[j].Title, a.c[j].Title, refcountj, a.c[i].Title)
+	return refcounti < refcountj
 }

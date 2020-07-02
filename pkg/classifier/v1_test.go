@@ -28,12 +28,12 @@ func TestClassifyV1(t *testing.T) {
 		t.Errorf("NewFileLoader: %s", err)
 	}
 
-	cla, err := NewV1(loader)
+	cla, err := NewV1()
 	if err != nil {
 		t.Errorf("NewV1: %s", err)
 	}
 
-	g, err := cla.LoadGraph(MathPageID, 0)
+	g, err := cla.LoadGraph(loader, MathPageID, 0)
 	if err != nil {
 		t.Errorf("LoadGraph: %s", err)
 	}

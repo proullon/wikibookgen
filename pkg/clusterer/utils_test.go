@@ -119,12 +119,12 @@ func ClusteringMath(t *testing.T, clu Clusterer) {
 		t.Fatalf("NewFileLoader: %s", err)
 	}
 
-	cla, err := classifier.NewV1(loader)
+	cla, err := classifier.NewV1()
 	if err != nil {
 		t.Fatalf("NewV1: %s", err)
 	}
 
-	gm, err := cla.LoadGraph(MathPageID, clu.MaxSize(j))
+	gm, err := cla.LoadGraph(loader, MathPageID, clu.MaxSize(j))
 	if err != nil {
 		t.Fatalf("LoadGraph: %s", err)
 	}
@@ -203,12 +203,12 @@ func TestIsHCS(t *testing.T) {
 		t.Fatalf("NewFileLoader: %s", err)
 	}
 
-	cla, err := classifier.NewV1(loader)
+	cla, err := classifier.NewV1()
 	if err != nil {
 		t.Fatalf("NewV1: %s", err)
 	}
 
-	gm, err := cla.LoadGraph(MathPageID, 0)
+	gm, err := cla.LoadGraph(loader, MathPageID, 0)
 	if err != nil {
 		t.Fatalf("LoadGraph: %s", err)
 	}
