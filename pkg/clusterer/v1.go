@@ -25,7 +25,7 @@ func (c *V1) Version() string {
 }
 
 func (c *V1) MaxSize(j Job) int64 {
-	return 2000000
+	return 1000000
 }
 
 // Cluster will group given articles into highly connected group
