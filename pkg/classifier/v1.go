@@ -151,8 +151,8 @@ func (g *Grapher) classify(_payload interface{}) (interface{}, error) {
 	g.addToGraph(v)
 
 	// check if loading node references is pertinent
-	// stop at 2nd degree to avoid infinite loading
-	maxdegree := 2
+	// stop at 3nd degree to avoid infinite loading
+	maxdegree := 3
 	trail = append(trail, v.ID)
 	if len(trail) >= maxdegree {
 		//log.Infof("Stop. cause of degree %d", maxdegree)

@@ -25,7 +25,7 @@ func (c *V1) Version() string {
 }
 
 func (c *V1) MaxSize(j Job) int64 {
-	return 2000000 // No limit
+	return 2000000
 }
 
 // Cluster will group given articles into highly connected group
@@ -62,8 +62,6 @@ func (c *V1) Cluster(j Job, rootID int64, g graph.Directed) (*Cluster, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	//componentmap, maxidx, _ = mergecomponentmap(g, componentmap)
 
 	for i := maxidx; i > 1; i-- {
 		for _, cl := range componentmap[i] {
@@ -163,11 +161,6 @@ func (c *V1) findcomponents(g graph.Directed, root graph.Node, maxtime time.Dura
 	neighbours := createNeighboursPool(g, []graph.Node{root})
 	neighbours = prepareNodePool(g, neighbours, 3)
 
-	/*
-		for _, n := range neighbours {
-			forbidden[n.ID()] = true
-		}
-	*/
 	allocation := len(neighbours)
 	if len(neighbours) > 100 {
 		allocation = len(neighbours) / 4
@@ -176,11 +169,17 @@ func (c *V1) findcomponents(g graph.Directed, root graph.Node, maxtime time.Dura
 	globalTimeout := time.Now().Add(maxtime)
 
 	for i, n := range neighbours {
+		// if majority of BiggestBestCandidate search finished late, check for globalTimeout
 		if time.Now().After(globalTimeout) {
 			log.Infof("Stopping early (%d/%d done)", i, len(neighbours))
 			break
 		}
+		// skip if neighbour was previously added in a component
+		if skip, ok := forbidden[n.ID()]; ok && skip {
+			continue
+		}
 
+		// search for biggest component with base root + neighbour
 		cm := make(Component)
 		cm[root.ID()] = root
 		cm[n.ID()] = n
@@ -191,10 +190,15 @@ func (c *V1) findcomponents(g graph.Directed, root graph.Node, maxtime time.Dura
 		if len(component) <= 2 {
 			continue
 		}
+
 		log.Infof("Got %v from %v after %s with %s left", component, cm, time.Since(begin), time.Until(end))
+
+		// add new component member to forbidden list
 		for id, _ := range component {
 			forbidden[id] = true
 		}
+
+		// add new component to map
 		l := len(component)
 		if l > maxidx {
 			maxidx = l
@@ -209,11 +213,9 @@ func (c *V1) BiggestBestCandidate(timeout time.Time, g graph.Directed, roots Com
 	var biggest Component
 	biggest = roots
 
-	if len(biggest) > 5 {
-		if !biggest.CanGrow(g) {
-			log.Infof("Component %v cannot grow to %d", biggest, len(biggest)+1)
-			return biggest
-		}
+	if len(biggest) > 5 && !biggest.CanGrow(g) {
+		log.Infof("Component %v cannot grow to %d", biggest, len(biggest)+1)
+		return biggest
 	}
 
 	neighbours := createComponentNeighboursPool(g, roots)

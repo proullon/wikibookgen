@@ -57,14 +57,11 @@ export class ShowWikibookComponent implements OnInit {
     var nodes: Array<WikibookNode> = [];
 
     for (let ch of wikibook.volumes[0].chapters) {
-      console.log('yaya ' + ch.title);
       var node = new WikibookNode(ch.title);
       for (let a of ch.articles) {
-        console.log('page ' + a.title);
         var n = new WikibookNode(a.title);
         node.nodes.push(n);
       }
-      console.log('chapter ' + node.title + ' has ' + node.nodes.length + ' pages');
       nodes.push(node);
     }
     console.log(nodes);
