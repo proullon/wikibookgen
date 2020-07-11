@@ -186,7 +186,9 @@ func (wg *WikibookGen) List(page int64, size int64, language string) ([]*Wikiboo
 	limit := size
 	offset := (page - 1) * size
 
-	query := `SELECT id, subject, model, language, pages FROM wikibook OFFSET $1 LIMIT $2`
+	query := `SELECT id, subject, model, language, pages, gen_date
+	FROM wikibook OFFSET $1 LIMIT $2 ORDER BY gen_date DESC`
+
 	rows, err := wg.db.Query(query, offset, limit)
 	if err != nil {
 		return nil, err
@@ -197,7 +199,7 @@ func (wg *WikibookGen) List(page int64, size int64, language string) ([]*Wikiboo
 	for rows.Next() {
 		b := &Wikibook{}
 
-		err = rows.Scan(&b.Uuid, &b.Subject, &b.Model, &b.Language, &b.Pages)
+		err = rows.Scan(&b.Uuid, &b.Subject, &b.Model, &b.Language, &b.Pages, &b.GenerationDate)
 		if err != nil {
 			return nil, err
 		}

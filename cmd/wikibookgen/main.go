@@ -13,6 +13,7 @@ import (
 	"github.com/proullon/wikibookgen/api"
 	"github.com/proullon/wikibookgen/pkg/classifier"
 	"github.com/proullon/wikibookgen/pkg/clusterer"
+	"github.com/proullon/wikibookgen/pkg/editor"
 	"github.com/proullon/wikibookgen/pkg/generator"
 	"github.com/proullon/wikibookgen/pkg/loader"
 	"github.com/proullon/wikibookgen/pkg/orderer"
@@ -70,6 +71,12 @@ func main() {
 			Value:  "certs/client.wikipedia.crt",
 			Usage:  "Client SSL certificate",
 			EnvVar: "SSL_CLIENT_CERT",
+		},
+		cli.StringFlag{
+			Name:   "workdir",
+			Value:  "",
+			Usage:  "Working filesystem directory for book printing",
+			EnvVar: "WORKDIR",
 		},
 		cli.IntFlag{
 			Name:   "db-max-conn",
@@ -134,7 +141,7 @@ func start(c *cli.Context) error {
 		return fmt.Errorf("classifier.NewV1: %s", err)
 	}
 
-	gen := generator.NewV1(db, cla, clusterer.NewV1(), orderer.NewV1(), loadermap)
+	gen := generator.NewV1(db, cla, clusterer.NewV1(), orderer.NewV1(), loadermap, editor.NewV1(), c.String("workdir"))
 	wg := wikibookgen.New(db, gen)
 
 	ctx := context.WithValue(context.Background(), "wg", wg)

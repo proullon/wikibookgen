@@ -9,6 +9,7 @@ export class Wikibook {
   title: string;
   pages: number;
   volumes: Volume[];
+  generation_date: string;
 }
 
 export class Volume {

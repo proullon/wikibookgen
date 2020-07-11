@@ -1,13 +1,14 @@
 package model
 
 type Wikibook struct {
-	Uuid     string    `json:"uuid"`
-	Subject  string    `json:"subject"`
-	Model    string    `json:"model"`
-	Language string    `json:"language"`
-	Title    string    `json:"title"`
-	Pages    int64     `json:"pages"`
-	Volumes  []*Volume `json:"volumes"`
+	Uuid           string    `json:"uuid"`
+	Subject        string    `json:"subject"`
+	Model          string    `json:"model"`
+	Language       string    `json:"language"`
+	Title          string    `json:"title"`
+	Pages          int64     `json:"pages"`
+	Volumes        []*Volume `json:"volumes"`
+	GenerationDate string    `json:"generation_date"`
 }
 
 type Volume struct {

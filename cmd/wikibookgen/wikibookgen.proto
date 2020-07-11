@@ -68,6 +68,7 @@ message Wikibook {
   string          title = 5;
   int64           pages = 6;
   repeated Volume volumes = 7;
+  string          generation_date = 8;
 }
 
 message Volume {

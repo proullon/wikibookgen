@@ -7,20 +7,15 @@
   <thead>
     <tr>
       <th scope="col">Title</th>
-      <th scope="col">Name</th>
       <th scope="col">Description</th>
-      <th scope="col">Options</th>
+      <th scope="col">Generation</th>
     </tr>
   </thead>
   <tbody>
   <tr *ngFor="let w of wikibooks">
   <td><a href="/wikibook/{{w.uuid}}">{{w.subject}}</a></td>
-  <td>{{w.subject}} <div *ngIf="w.language">({{w.language}})</div></td>
-  <td>Pages:{{w.pages}}</td>
-  <td>
-    <a href="/task/{{w.uuid}}/update"><i class="material-icons">edit</i></a>
-    <a href="" onclick="return false;"><i (click)="completeTask(task)" class="material-icons">done</i></a>
-  </td>
+  <td>{{w.pages}} pages. <div *ngIf="w.language">({{w.language}})</div></td>
+  <td>{{w.generation_date}}</td>
   </tr>
   </tbody>
 </table>

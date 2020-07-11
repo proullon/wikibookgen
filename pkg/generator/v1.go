@@ -14,21 +14,25 @@ import (
 type V1 struct {
 	version string
 	db      *sql.DB
+	workdir string
 
 	loaders    map[string]Loader
 	classifier Classifier
 	clusterer  Clusterer
 	orderer    Orderer
+	editor     Editor
 }
 
-func NewV1(db *sql.DB, classifier Classifier, clusterer Clusterer, orderer Orderer, loaders map[string]Loader) *V1 {
+func NewV1(db *sql.DB, classifier Classifier, clusterer Clusterer, orderer Orderer, loaders map[string]Loader, editor Editor, workdir string) *V1 {
 	g := &V1{
 		version:    "1",
 		db:         db,
+		workdir:    workdir,
 		classifier: classifier,
 		clusterer:  clusterer,
 		orderer:    orderer,
 		loaders:    loaders,
+		editor:     editor,
 	}
 
 	return g
@@ -87,6 +91,13 @@ func (g *V1) generate(j Job) error {
 
 	log.Infof("Generate: %+v inserting wikibook", j)
 
+	begin = time.Now()
+	err = g.editor.Edit(loader, j, wikibook)
+	if err != nil {
+		return err
+	}
+	editingDuration := time.Since(begin)
+
 	for i := 0; i < 3; i++ {
 		err = g.insertWikibook(j, wikibook)
 		if err == nil {
@@ -98,7 +109,14 @@ func (g *V1) generate(j Job) error {
 		time.Sleep(1 * time.Second)
 	}
 
-	log.Infof("Generate: %+v done ! (classification: %s, clustering: %s, ordering: %s", j, classificationDuration, clusteringDuration, orderingDuration)
+	begin = time.Now()
+	err = g.editor.Print(loader, j, wikibook, g.workdir)
+	if err != nil {
+		return err
+	}
+	printingDuration := time.Since(begin)
+
+	log.Infof("Generate: %+v done ! (classification: %s, clustering: %s, ordering: %s, editing: %s, printing: %s", j, classificationDuration, clusteringDuration, orderingDuration, editingDuration, printingDuration)
 
 	return nil
 }
