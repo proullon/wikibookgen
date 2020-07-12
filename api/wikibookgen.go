@@ -151,12 +151,12 @@ func (wg *WikibookGen) LoadOrder(uuid string) (string, string, error) {
 
 func (wg *WikibookGen) Load(uuid string) (*Wikibook, error) {
 	log.Infof("Loading %s", uuid)
-	query := `SELECT subject, model, language, pages, table_of_content FROM wikibook WHERE id = $1`
+	query := `SELECT subject, model, language, pages, table_of_content, gen_date FROM wikibook WHERE id = $1`
 
-	w := &Wikibook{Uuid: uuid}
-	var subject, model, language, toc string
+	w := &Wikibook{}
+	var subject, model, language, toc, gendate string
 	var pages int64
-	err := wg.db.QueryRow(query, uuid).Scan(&subject, &model, &language, &pages, &toc)
+	err := wg.db.QueryRow(query, uuid).Scan(&subject, &model, &language, &pages, &toc, &gendate)
 	if err != nil {
 		return nil, err
 	}
@@ -166,10 +166,12 @@ func (wg *WikibookGen) Load(uuid string) (*Wikibook, error) {
 		return nil, err
 	}
 
+	w.Uuid = uuid
 	w.Subject = subject
 	w.Model = model
 	w.Language = language
 	w.Pages = pages
+	w.GenerationDate = gendate
 
 	return w, nil
 }
