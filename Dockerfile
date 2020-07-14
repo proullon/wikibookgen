@@ -33,6 +33,9 @@ RUN go build \
 # Final stage: the running container.
 FROM debian:stretch AS final
 
+# pandoc to export books as epub and pdf
+RUN apt-get update && apt-get install -y pandoc
+
 # Import the user and group files from the first stage.
 COPY --from=builder /user/group /user/passwd /etc/
 

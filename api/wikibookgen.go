@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -68,7 +70,7 @@ func (wg *WikibookGen) jobRoutine() {
 		return
 	}
 
-	log.Infof("coucou start %v", j)
+	log.Infof("Starting generation job for %v", j)
 	wg.gen.Generate(j)
 }
 
@@ -213,5 +215,46 @@ func (wg *WikibookGen) List(page int64, size int64, language string) ([]*Wikiboo
 }
 
 func (wg *WikibookGen) Complete(value string, language string) ([]string, error) {
-	return wg.gen.Complete(value, language)
+	begin := time.Now()
+
+	titles, err := wg.gen.Complete(value, language)
+	log.Infof("Complete(%s, %s): %s", value, language, time.Since(begin))
+	if err != nil {
+		return nil, err
+	}
+	return titles, nil
+}
+
+func (wg *WikibookGen) Download(id string, format string, w http.ResponseWriter) error {
+
+	wikibook, err := wg.Load(id)
+	if err != nil {
+		return err
+	}
+
+	err = wg.gen.Print(wikibook)
+	if err != nil {
+		return err
+	}
+
+	reader, err := wg.gen.Open(id, format)
+	if err != nil {
+		return err
+	}
+
+	// TODO: increase download count
+
+	switch format {
+	case "epub":
+		w.Header().Set("Content-Type", "application/epub+zip")
+	default:
+		w.Header().Set("Content-Type", "text/plain")
+	}
+
+	_, err = io.Copy(w, reader)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

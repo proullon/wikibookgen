@@ -160,6 +160,7 @@ func (c *V1) findcomponents(g graph.Directed, root graph.Node, maxtime time.Dura
 
 	neighbours := createNeighboursPool(g, []graph.Node{root})
 	neighbours = prepareNodePool(g, neighbours, 3)
+	//sort.Sort(ByDegree(neighbours))
 
 	allocation := len(neighbours)
 	if len(neighbours) > 100 {

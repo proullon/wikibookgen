@@ -4,6 +4,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
+	"os"
+	"path"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -110,7 +113,7 @@ func (g *V1) generate(j Job) error {
 	}
 
 	begin = time.Now()
-	err = g.editor.Print(loader, j, wikibook, g.workdir)
+	err = g.editor.Print(loader, wikibook, g.workdir)
 	if err != nil {
 		return err
 	}
@@ -180,4 +183,30 @@ func (g *V1) Complete(value string, language string) ([]string, error) {
 	}
 
 	return l.Search(value)
+}
+
+func (g *V1) Print(w *Wikibook) error {
+
+	loader, ok := g.loaders[w.Language]
+	if !ok {
+		return fmt.Errorf("Loader for lang=%s not available", w.Language)
+	}
+
+	err := g.editor.Print(loader, w, g.workdir)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (g *V1) Open(id string, format string) (io.Reader, error) {
+
+	p := path.Join(g.workdir, fmt.Sprintf("%s.%s", id, format))
+	reader, err := os.Open(p)
+	if err != nil {
+		return nil, err
+	}
+
+	return reader, nil
 }

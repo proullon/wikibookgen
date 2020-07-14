@@ -25,6 +25,7 @@ export class Chapter {
 export class Page {
   id: number;
   title: string;
+  content: string;
 }
 
 export class StatusResponse {

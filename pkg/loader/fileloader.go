@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"sync"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type FileLoader struct {
@@ -15,6 +17,8 @@ type FileLoader struct {
 	outm     sync.Mutex
 	Titles   map[int64]string
 	titlem   sync.Mutex
+	Contents map[int64]string
+	contentm sync.Mutex
 }
 
 func NewFileLoader(filepath string) (*FileLoader, error) {
@@ -22,6 +26,7 @@ func NewFileLoader(filepath string) (*FileLoader, error) {
 		Incoming: make(map[int64][]int64),
 		Outgoing: make(map[int64][]int64),
 		Titles:   make(map[int64]string),
+		Contents: make(map[int64]string),
 	}
 
 	content, err := ioutil.ReadFile(filepath)
@@ -34,6 +39,7 @@ func NewFileLoader(filepath string) (*FileLoader, error) {
 		return nil, err
 	}
 
+	log.Infof("NewFileLoader: %d contents available", len(l.Contents))
 	return l, nil
 }
 
@@ -77,4 +83,15 @@ func (l *FileLoader) Title(id int64) (string, error) {
 func (l *FileLoader) Search(value string) ([]string, error) {
 	titles := make([]string, 0)
 	return titles, nil
+}
+
+func (l *FileLoader) Content(id int64) (string, error) {
+	l.contentm.Lock()
+	content, ok := l.Contents[id]
+	l.contentm.Unlock()
+	if ok {
+		return content, nil
+	}
+
+	return "", fmt.Errorf("not found")
 }

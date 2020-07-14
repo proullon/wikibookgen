@@ -55,7 +55,7 @@ service wikibookgen {
   
   rpc DownloadWikibook(DownloadWikibookRequest) returns (Void) {
     option (google.api.http) ={
-      get: "/wikibook/{uuid}/download"
+      get: "/wikibook/{uuid}/download?format={format}"
     };
   }
 }
@@ -82,8 +82,9 @@ message Chapter {
 }
 
 message Page {
-  int64  id = 1;
-  string title = 2;
+  int64  id      = 1;
+  string title   = 2;
+  string content = 3;
 }
 
 message StatusResponse {

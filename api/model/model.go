@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"io"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -16,6 +17,8 @@ type Generator interface {
 	Generate(Job)
 	Find(string, string) (int64, error)
 	Complete(string, string) ([]string, error)
+	Print(*Wikibook) error
+	Open(string, string) (io.Reader, error)
 }
 
 // Loader defines objects able to retrieve article references
@@ -26,6 +29,7 @@ type Loader interface {
 	ID(string) (int64, error)
 	Title(int64) (string, error)
 	Search(string) ([]string, error)
+	Content(int64) (string, error)
 }
 
 // Classifier interface defines objects able to select
@@ -56,7 +60,7 @@ type Orderer interface {
 // a humain readable table of content
 type Editor interface {
 	Edit(Loader, Job, *Wikibook) error
-	Print(Loader, Job, *Wikibook, string) error
+	Print(Loader, *Wikibook, string) error
 	Version() string
 }
 

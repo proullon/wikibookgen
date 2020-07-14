@@ -65,9 +65,6 @@ func testOrder() error {
 		return fmt.Errorf("Order(invalidsubject, %s): should have error", model)
 	}
 
-	wikibookgen.Order("Musique", model, lang)
-	wikibookgen.Order("Histoire_du_vol_spatial", model, lang)
-
 	// test nominal
 	orderID, err = wikibookgen.Order(subject, model, lang)
 	if err != nil {

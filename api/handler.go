@@ -2,12 +2,17 @@ package wikibookgen
 
 import (
 	"context"
+	"net/http"
 
 	. "github.com/proullon/wikibookgen/api/model"
 )
 
 func WG(ctx context.Context) *WikibookGen {
 	return ctx.Value("wg").(*WikibookGen)
+}
+
+func Writer(ctx context.Context) http.ResponseWriter {
+	return ctx.Value("w").(http.ResponseWriter)
 }
 
 func statusHandler(ctx context.Context, v *Void) (*StatusResponse, error) {
@@ -75,5 +80,5 @@ func getWikibookHandler(ctx context.Context, req *GetWikibookRequest) (*GetWikib
 }
 
 func downloadWikibookHandler(ctx context.Context, req *DownloadWikibookRequest) (*Void, error) {
-	return nil, nil
+	return nil, WG(ctx).Download(req.Uuid, req.Format, Writer(ctx))
 }

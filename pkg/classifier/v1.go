@@ -55,6 +55,7 @@ func (c *V1) LoadGraph(loader Loader, rootID int64, maxSize int64) (graph.Direct
 		workerpool.WithMaxWorker(200),
 		workerpool.WithEvaluationTime(1),
 		workerpool.WithSizePercentil(workerpool.LogSizesPercentil),
+		workerpool.WithMaxQueue(100000),
 	)
 	if err != nil {
 		return nil, err
@@ -197,21 +198,14 @@ func (g *Grapher) classify(_payload interface{}) (interface{}, error) {
 	}
 
 	// Feed ref in workerpool
-	//	go func(trail []int64, tofeed []int64) {
 	for _, id := range tofeed {
 		p := &payload{
 			ID:    id,
 			Trail: trail,
 		}
-
 		g.wp.Feed(p)
 	}
-	/*}(trail, tofeed)
 
-	if len(tofeed) > 1 {
-		time.Sleep(1 * time.Millisecond)
-	}
-	*/
 	return nil, nil
 }
 

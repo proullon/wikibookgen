@@ -236,7 +236,7 @@ func GetWikibook(uuid_ string) (wikibook *Wikibook, err error) {
 
 }
 
-// DownloadWikibook : GET /wikibook/{uuid}/download
+// DownloadWikibook : GET /wikibook/{uuid}/download?format={format}
 func DownloadWikibook(uuid_ string, format_ string) (err error) {
 
 	in := &DownloadWikibookRequest{
@@ -360,10 +360,10 @@ func httpGetWikibook(in *GetWikibookRequest, baseAddress, token string) (out *Ge
 	return
 }
 
-// DownloadWikibook : GET /wikibook/{uuid}/download
+// DownloadWikibook : GET /wikibook/{uuid}/download?format={format}
 func httpDownloadWikibook(in *DownloadWikibookRequest, baseAddress, token string) (out *Void, err error) {
 
-	path := "/wikibook/{uuid}/download"
+	path := "/wikibook/{uuid}/download?format={format}"
 	placeholders := map[string]string{
 		"uuid":   fmt.Sprintf("%v", in.Uuid),
 		"format": fmt.Sprintf("%v", in.Format),
@@ -399,8 +399,9 @@ type Chapter struct {
 }
 
 type Page struct {
-	Id    int64  `json:"id"`
-	Title string `json:"title"`
+	Id      int64  `json:"id"`
+	Title   string `json:"title"`
+	Content string `json:"content"`
 }
 
 type StatusResponse struct {
