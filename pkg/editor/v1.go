@@ -16,13 +16,6 @@ var tmpl = `
 % My Book ({{.Title}})
 % Sam Smith
 
-This is my book!
-
-# Summary
-
-{{range $chapter := .Chapters}}
-	- {{.Title}}{{end}}
-
 # Chapter One
 
 Chapter one has just begun.
@@ -125,7 +118,7 @@ func (e *V1) printWikitxt(v *Volume, dest string) error {
 
 func (e *V1) printEpub(src string, dst string) error {
 
-	cmd := exec.Command("pandoc", src, "-o", dst)
+	cmd := exec.Command("pandoc", "--toc", src, "-o", dst)
 	err := cmd.Run()
 	if err != nil {
 		return err
@@ -137,7 +130,7 @@ func (e *V1) printEpub(src string, dst string) error {
 
 func (e *V1) printPDF(src string, dst string) error {
 
-	cmd := exec.Command("pandoc", src, "-o", dst)
+	cmd := exec.Command("pandoc", "--toc", src, "-o", dst)
 	err := cmd.Run()
 	if err != nil {
 		return err

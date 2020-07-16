@@ -144,12 +144,18 @@ func (l *DBLoader) Search(value string) ([]string, error) {
 
 func (l *DBLoader) Content(id int64) (string, error) {
 	var c string
+	var err error
 
-	query := `SELECT content FROM page_content WHERE page_id = $1`
-	err := l.db.QueryRow(query, id).Scan(&c)
-	if err != nil {
-		return "", err
+	for i := 0; i < 10; i++ {
+		query := `SELECT content FROM page_content WHERE page_id = $1`
+		err := l.db.QueryRow(query, id).Scan(&c)
+		if err != nil && err == sql.ErrNoRows {
+			return "", err
+		}
+		if err == nil {
+			return c, nil
+		}
 	}
 
-	return c, nil
+	return "", err
 }
