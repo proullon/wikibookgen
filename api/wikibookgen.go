@@ -217,6 +217,10 @@ func (wg *WikibookGen) List(page int64, size int64, language string) ([]*Wikiboo
 func (wg *WikibookGen) Complete(value string, language string) ([]string, error) {
 	begin := time.Now()
 
+	if len(value) < 8 {
+		return []string{}, nil
+	}
+
 	titles, err := wg.gen.Complete(value, language)
 	log.Infof("Complete(%s, %s): %s", value, language, time.Since(begin))
 	if err != nil {
@@ -226,20 +230,24 @@ func (wg *WikibookGen) Complete(value string, language string) ([]string, error)
 }
 
 func (wg *WikibookGen) Download(id string, format string, w http.ResponseWriter) error {
+	log.Infof("Download request for %s.%s", id, format)
 
 	wikibook, err := wg.Load(id)
 	if err != nil {
 		return err
 	}
 
-	err = wg.gen.Print(wikibook)
-	if err != nil {
-		return err
-	}
-
 	reader, err := wg.gen.Open(id, format)
 	if err != nil {
-		return err
+		log.Infof("Download: cannot open %s.%s (%s) requesting print", id, format, err)
+		err = wg.gen.Print(wikibook)
+		if err != nil {
+			return err
+		}
+		reader, err = wg.gen.Open(id, format)
+		if err != nil {
+			return err
+		}
 	}
 
 	// TODO: increase download count
@@ -247,6 +255,8 @@ func (wg *WikibookGen) Download(id string, format string, w http.ResponseWriter)
 	switch format {
 	case "epub":
 		w.Header().Set("Content-Type", "application/epub+zip")
+	case "pdf":
+		w.Header().Set("Content-Type", "application/pdf")
 	default:
 		w.Header().Set("Content-Type", "text/plain")
 	}

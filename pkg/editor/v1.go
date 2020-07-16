@@ -95,6 +95,12 @@ func (e *V1) printVolume(l Loader, w *Wikibook, vol int, folder string, name str
 		return err
 	}
 
+	pdfpath := path.Join(folder, fmt.Sprintf("%s.pdf", w.Uuid))
+	err = e.printPDF(txtpath, pdfpath)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -106,11 +112,13 @@ func (e *V1) printWikitxt(v *Volume, dest string) error {
 	if err != nil {
 		return err
 	}
+	defer f.Close()
 
 	err = t.Execute(f, v)
 	if err != nil {
 		return err
 	}
+	log.Infof("Wikibook volume '%s' written in %s", v.Title, dest)
 
 	return nil
 }
@@ -123,6 +131,19 @@ func (e *V1) printEpub(src string, dst string) error {
 		return err
 	}
 
+	log.Infof("Wikibook epub written in %s", dst)
+	return nil
+}
+
+func (e *V1) printPDF(src string, dst string) error {
+
+	cmd := exec.Command("pandoc", src, "-o", dst)
+	err := cmd.Run()
+	if err != nil {
+		return err
+	}
+
+	log.Infof("Wikibook pdf written in %s", dst)
 	return nil
 }
 
