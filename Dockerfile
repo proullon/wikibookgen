@@ -34,7 +34,7 @@ RUN go build \
 FROM debian:stretch AS final
 
 # pandoc to export books as epub and pdf
-RUN apt-get update && apt-get install -y pandoc
+RUN apt-get update && apt-get install -y pandoc wget
 
 # Import the user and group files from the first stage.
 COPY --from=builder /user/group /user/passwd /etc/

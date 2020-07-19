@@ -46,7 +46,7 @@ func editorTest(e Editor, t *testing.T) {
 		t.Fatalf("Edit: %s", err)
 	}
 
-	err = e.Print(l, w, "../../samples/")
+	err = e.Print(l, w, "../../samples/output")
 	if err != nil {
 		t.Fatalf("Print: %s", err)
 	}

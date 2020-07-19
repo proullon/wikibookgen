@@ -1,4 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+import { Location } from '@angular/common';
+import { NestedTreeControl } from '@angular/cdk/tree';
+import { MatTreeModule, MatTreeNestedDataSource } from '@angular/material/tree';
+
+import { WikibookgenService } from '../wikibookgen.service'; 
 
 @Component({
   selector: 'app-order-status',
@@ -7,9 +13,26 @@ import { Component, OnInit } from '@angular/core';
 })
 export class OrderStatusComponent implements OnInit {
 
-  constructor() { }
+  orderStatus: string;
+
+  constructor(
+    private route: ActivatedRoute,
+    private wikibookgenService: WikibookgenService,
+    private location: Location
+  ) { 
+  }
 
   ngOnInit(): void {
+    const uuid = this.route.snapshot.paramMap.get('id');
+    this.getStatus(uuid);
+  }
+
+  getStatus(uuid: string): void {
+    this.wikibookgenService.getOrderStatus(uuid) 
+      .subscribe((orderStatus:string) => {
+        console.log(orderStatus);
+        this.orderStatus = orderStatus;
+      });
   }
 
 }

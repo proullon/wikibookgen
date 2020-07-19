@@ -55,7 +55,6 @@ func (c *V1) LoadGraph(loader Loader, rootID int64, maxSize int64) (graph.Direct
 		workerpool.WithMaxWorker(200),
 		workerpool.WithEvaluationTime(1),
 		workerpool.WithSizePercentil(workerpool.LogSizesPercentil),
-		workerpool.WithMaxQueue(100000),
 	)
 	if err != nil {
 		return nil, err

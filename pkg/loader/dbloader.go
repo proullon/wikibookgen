@@ -121,14 +121,19 @@ func (l *DBLoader) title(id int64) (string, error) {
 }
 
 func (l *DBLoader) Search(value string) ([]string, error) {
-	query := `SELECT title FROM page WHERE lower_title LIKE $1`
+	var titles []string
+
+	if len(value) < 3 {
+		return titles, nil
+	}
+
+	query := `SELECT title FROM page WHERE lower_title LIKE $1 LIMIT 100`
 	rows, err := l.db.Query(query, fmt.Sprintf("%s%%", value))
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var titles []string
 	for rows.Next() {
 		var t string
 		err = rows.Scan(&t)

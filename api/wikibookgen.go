@@ -217,10 +217,6 @@ func (wg *WikibookGen) List(page int64, size int64, language string) ([]*Wikiboo
 func (wg *WikibookGen) Complete(value string, language string) ([]string, error) {
 	begin := time.Now()
 
-	if len(value) < 8 {
-		return []string{}, nil
-	}
-
 	titles, err := wg.gen.Complete(value, language)
 	log.Infof("Complete(%s, %s): %s", value, language, time.Since(begin))
 	if err != nil {

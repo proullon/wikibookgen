@@ -40,3 +40,5 @@ ui/.settings/
 /ui/testem.log
 /ui/typings
 
+# test files
+samples/output

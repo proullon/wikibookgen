@@ -4,7 +4,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 
-import { Wikibook, ListWikibookRequest, ListWikibookResponse, CompleteRequest, OrderRequest } from './wikibook';
+import { Wikibook, ListWikibookRequest, ListWikibookResponse, CompleteRequest, OrderRequest, OrderStatusResponse } from './wikibook';
 import { environment } from './../environments/environment';
 
 @Injectable({
@@ -37,6 +37,17 @@ export class WikibookgenService {
           return result.wikibook
         }),
         catchError(this.handleError('getWikibook', null))
+      );
+  }
+  
+  public getOrderStatus(uuid: string): Observable<string> {
+    console.log('getOrderStatus ' + uuid);
+    return this.http.get<OrderStatusResponse>(`${this.api}/order/${uuid}`)
+      .pipe(
+        map((result:any)=>{
+          return result.status
+        }),
+        catchError(this.handleError('getOrderStatus', null))
       );
   }
 
