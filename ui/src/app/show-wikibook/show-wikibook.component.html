@@ -7,7 +7,7 @@ Wikibook of type <b>{{wikibook.model}}</b>. {{wikibook.pages}} pages.
 
 <h2> Download </h2>
 <p>
-<a href="/wikibook/{{wikibook.uuid}}/download?format=epub">epub</a>
+<a href="https://api.wikibookgen.org/wikibook/{{wikibook.uuid}}/download?format=epub">epub</a>
 </p>
 
 <h2>Table of content</h2>
@@ -19,7 +19,7 @@ Wikibook of type <b>{{wikibook.model}}</b>. {{wikibook.pages}} pages.
     <li class="mat-tree-node">
       <!-- use a disabled button to provide padding for tree leaf -->
       <button mat-icon-button disabled></button>
-       {{node.title}}
+      <a href="{{wikibook.language}}.wikipedia.org/wiki/{{node.title}}">{{node.title}}</a>
     </li>
   </mat-tree-node>
   <!-- This is the tree node template for expandable nodes -->
