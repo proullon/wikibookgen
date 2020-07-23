@@ -74,7 +74,7 @@ func main() {
 		},
 		cli.StringFlag{
 			Name:   "workdir",
-			Value:  "",
+			Value:  "/tmp/wikibookgen",
 			Usage:  "Working filesystem directory for book printing",
 			EnvVar: "WORKDIR",
 		},

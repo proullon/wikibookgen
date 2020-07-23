@@ -154,7 +154,8 @@ func (e *V1) printWikitxt(v *Volume, lang, folder, id string) error {
 	title := template.Must(template.New("wikibook-title").Parse(titletmpl))
 	chapter := template.Must(template.New("wikibook-chapter").Parse(chaptertmpl))
 
-	titlepath := path.Join(folder, fmt.Sprintf("%s.txt", id))
+	titlename := fmt.Sprintf("%s.txt", id)
+	titlepath := path.Join(folder, titlename)
 	f, err := os.OpenFile(titlepath, os.O_RDWR|os.O_CREATE, 0755)
 	if err != nil {
 		return err
@@ -170,6 +171,7 @@ func (e *V1) printWikitxt(v *Volume, lang, folder, id string) error {
 	var texfiles []string
 	var dest string
 	for i, c := range v.Chapters {
+
 		dest = path.Join(folder, fmt.Sprintf("%s-%d.txt", id, i+1))
 		f, err := os.OpenFile(dest, os.O_RDWR|os.O_CREATE, 0755)
 		if err != nil {
@@ -184,7 +186,8 @@ func (e *V1) printWikitxt(v *Volume, lang, folder, id string) error {
 		}
 		log.Infof("Wikibook volume chapter written in %s", dest)
 
-		tex := path.Join(folder, fmt.Sprintf("%s-%d.tex", id, i+1))
+		texname := fmt.Sprintf("%s-%d.tex", id, i+1)
+		tex := path.Join(folder, texname)
 		err = e.convertTex(dest, tex)
 		if err != nil {
 			log.Errorf("cannot convert %s to tex: %s", dest, err)
@@ -197,7 +200,7 @@ func (e *V1) printWikitxt(v *Volume, lang, folder, id string) error {
 			continue
 		}
 
-		texfiles = append(texfiles, tex)
+		texfiles = append(texfiles, texname)
 		if len(texfiles) == 2 {
 			break
 		}
@@ -209,12 +212,13 @@ func (e *V1) printWikitxt(v *Volume, lang, folder, id string) error {
 	args := []string{
 		`-o`,
 		dst,
-		titlepath,
+		titlename,
 	}
 	args = append(args, texfiles...)
 	log.Info(args)
 
 	cmd := exec.Command("pandoc", args...)
+	cmd.Dir = folder
 	err = cmd.Run()
 	if err != nil {
 		return err
@@ -344,10 +348,10 @@ func removeVideo(c, lang string) string {
 			continue
 		}
 		s = strings.Split(s, ":")[1]
-		if strings.HasSuffix(s, "webm") {
-			log.Infof("Removing from content '%s'", entry)
-			strings.ReplaceAll(c, entry, "")
-		}
+		//		if strings.HasSuffix(s, "webm") {
+		log.Infof("Removing from content '%s'", entry)
+		c = strings.ReplaceAll(c, entry, "")
+		//		}
 	}
 
 	return c
