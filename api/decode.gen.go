@@ -201,6 +201,26 @@ func (d *defaultDecoder) DecodeGetWikibookRequest(r *http.Request) (interface{},
 	return req, nil
 }
 
+func (d *defaultDecoder) DecodeGetAvailableDownloadFormatRequest(r *http.Request) (interface{}, error) {
+	vars := mux.Vars(r)
+	_ = vars
+	r.ParseForm()
+
+	req := &GetAvailableDownloadFormatRequest{}
+
+	if stringvar, ok := vars["uuid"]; ok {
+		if err := convertTYPE_STRING(stringvar, &req.Uuid); err != nil {
+			return nil, fmt.Errorf("%s: %s", "uuid", err)
+		}
+	} else if stringvar := r.FormValue("uuid"); stringvar != "" {
+		if err := convertTYPE_STRING(stringvar, &req.Uuid); err != nil {
+			return nil, fmt.Errorf("%s: %s", "uuid", err)
+		}
+	}
+
+	return req, nil
+}
+
 func (d *defaultDecoder) DecodeDownloadWikibookRequest(r *http.Request) (interface{}, error) {
 	vars := mux.Vars(r)
 	_ = vars

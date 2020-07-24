@@ -84,3 +84,12 @@ type DownloadWikibookRequest struct {
 	Uuid   string `json:"uuid,omitempty"`
 	Format string `json:"format,omitempty"`
 }
+
+type GetAvailableDownloadFormatRequest struct {
+	Uuid string `json:"uuid,omitempty"`
+}
+
+type GetAvailableDownloadFormatResponse struct {
+	Epub bool `json:"epub,omitempty"`
+	Pdf  bool `json:"pdf,omitempty"`
+}

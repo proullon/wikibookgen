@@ -57,6 +57,7 @@ func ListenAndServe(ctx context.Context, port string) error {
 	HandleFunc("GET", strings.Split("/order/{uuid}", "?")[0], wraporderStatus(ctx, decoder))
 	HandleFunc("GET", strings.Split("/wikibook?page={page}&size={size}&language={language}", "?")[0], wraplistWikibook(ctx, decoder))
 	HandleFunc("GET", strings.Split("/wikibook/{uuid}", "?")[0], wrapgetWikibook(ctx, decoder))
+	HandleFunc("GET", strings.Split("/wikibook/{uuid}/download/format", "?")[0], wrapgetAvailableDownloadFormat(ctx, decoder))
 	HandleFunc("GET", strings.Split("/wikibook/{uuid}/download?format={format}", "?")[0], wrapdownloadWikibook(ctx, decoder))
 
 	http.Handle("/", &Router{r: _router})
@@ -288,6 +289,45 @@ func wrapgetWikibook(ctx context.Context, decoder httpDecoder) func(w http.Respo
 		data, err := json.Marshal(resp)
 		if err != nil {
 			log.Errorf("GET /wikibook/{uuid}: %s\n", err)
+			w.WriteHeader(500)
+			return
+		}
+
+		w.Write(data)
+	}
+
+	return f
+}
+
+func wrapgetAvailableDownloadFormat(ctx context.Context, decoder httpDecoder) func(w http.ResponseWriter, r *http.Request) {
+
+	f := func(w http.ResponseWriter, r *http.Request) {
+		i, err := decoder.DecodeGetAvailableDownloadFormatRequest(r)
+		if err != nil {
+			log.Errorf("GET /wikibook/{uuid}/download/format: %s\n", err)
+			w.WriteHeader(500)
+			return
+		}
+
+		req := i.(*GetAvailableDownloadFormatRequest)
+
+		ctx = context.WithValue(ctx, "w", w)
+		ctx = context.WithValue(ctx, "r", r)
+		resp, err := getAvailableDownloadFormatHandler(ctx, req)
+		if err == nil && resp == nil {
+			// Nothing to do here
+			return
+		}
+
+		if err != nil {
+			log.Errorf("GET /wikibook/{uuid}/download/format: %s\n", err)
+			w.WriteHeader(500)
+			return
+		}
+
+		data, err := json.Marshal(resp)
+		if err != nil {
+			log.Errorf("GET /wikibook/{uuid}/download/format: %s\n", err)
 			w.WriteHeader(500)
 			return
 		}

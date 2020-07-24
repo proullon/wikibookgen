@@ -86,3 +86,12 @@ export class DownloadWikibookRequest {
   format: string;
 }
 
+export class GetAvailableDownloadFormatRequest {
+  uuid: string;
+}
+
+export class GetAvailableDownloadFormatResponse {
+  epub: boolean;
+  pdf: boolean;
+}
+

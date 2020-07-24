@@ -33,8 +33,7 @@ Chapter one has just begun.
 {{end}}
 `
 
-var titletmpl = `
----
+var titletmpl = `---
 title:
 - type: main
   text: {{.Title}}
@@ -54,30 +53,43 @@ ibooks:
 var chaptertmpl = `
 = {{.Title}} =
 
+Some text lol
+
+== Some test ==
+
+Some more text.
+
+`
+
+/*
 {{range $page := .Articles}}
 {{.Content}}
 {{end}}
 `
+*/
 
 type i18n struct {
-	VolumeTitleFmt  string
-	ChapterTitleFmt string
-	File            string
-	SeeAlso         string
+	VolumeTitleFmt     string
+	ChapterTitleFmt    string
+	File               string
+	SeeAlso            string
+	NotesAndReferences string
 }
 
 var langmap map[string]i18n = map[string]i18n{
 	"en": {
-		VolumeTitleFmt:  "Tour of %s",
-		ChapterTitleFmt: "Chapter %d: %s",
-		File:            "File",
-		SeeAlso:         "See also",
+		VolumeTitleFmt:     "Tour of %s",
+		ChapterTitleFmt:    "Chapter %d: %s",
+		File:               "File",
+		SeeAlso:            "See also",
+		NotesAndReferences: "References",
 	},
 	"fr": {
-		VolumeTitleFmt:  "%s en long, en large et en travers",
-		ChapterTitleFmt: "Chapter %d: %s",
-		File:            "Fichier",
-		SeeAlso:         "Voir aussi",
+		VolumeTitleFmt:     "%s en long, en large et en travers",
+		ChapterTitleFmt:    "Chapter %d: %s",
+		File:               "Fichier",
+		SeeAlso:            "Voir aussi",
+		NotesAndReferences: "Notes et références",
 	},
 }
 
@@ -201,18 +213,22 @@ func (e *V1) printWikitxt(v *Volume, lang, folder, id string) error {
 		}
 
 		texfiles = append(texfiles, texname)
-		if len(texfiles) == 2 {
-			break
-		}
+		/*
+			if len(texfiles) == 2 {
+				break
+			}
+		*/
 	}
 
 	dst := path.Join(folder, fmt.Sprintf("%s.pdf", id))
 	log.Infof("generating pdf %s", dst)
 
 	args := []string{
+		`--toc`,
+		`--latex-engine=xelatex`,
 		`-o`,
 		dst,
-		titlename,
+		fmt.Sprintf("--epub-metadata=%s", titlename),
 	}
 	args = append(args, texfiles...)
 	log.Info(args)
@@ -257,7 +273,7 @@ func (e *V1) printPDF(src string, dst string) error {
 
 	log.Infof("Writing pdf in %s", dst)
 
-	cmd := exec.Command("pandoc", "--toc", src, "-o", dst)
+	cmd := exec.Command("pandoc", "--latex-engine=xelatex", "--toc", src, "-o", dst)
 	err := cmd.Run()
 	if err != nil {
 		return err
@@ -280,6 +296,8 @@ func (e *V1) loadPageContent(l Loader, v *Volume, lang string) error {
 			}
 			v.Chapters[ci].Articles[ai].Content = removeSeeAlso(v.Chapters[ci].Articles[ai].Content)
 			v.Chapters[ci].Articles[ai].Content = removeVideo(v.Chapters[ci].Articles[ai].Content, lang)
+			v.Chapters[ci].Articles[ai].Content = removeLink(v.Chapters[ci].Articles[ai].Content, lang)
+			v.Chapters[ci].Articles[ai].Content = removeNotesAndReferences(v.Chapters[ci].Articles[ai].Content, lang)
 		}
 	}
 
@@ -289,26 +307,28 @@ func (e *V1) loadPageContent(l Loader, v *Volume, lang string) error {
 // See: https://commons.wikimedia.org/wiki/Commons:FAQ#What_are_the_strangely_named_components_in_file_paths.3F
 func (e *V1) downloadFiles(c *Chapter, lang, folder string) error {
 
-	for i, a := range c.Articles {
+	for _, a := range c.Articles {
 
-		re := regexp.MustCompile(`\[\[.(.*?)\]\]`)
+		re := regexp.MustCompile(`\[\[(?s)(.*?)\]\]`)
 		sub := re.FindAllString(a.Content, -1)
 		for _, s := range sub {
 			// [[Fichier:Nombrepremier 2017.png|vignette|Le nombre [[7 (nombre)|7]]
-			entry := s
+			//entry := s
 			s = strings.TrimPrefix(strings.TrimSuffix(s, "]]"), "[[")
 			s = strings.Split(s, "|")[0]
-			if !strings.HasPrefix(s, langmap[lang].File+":") {
+			if !strings.HasPrefix(s, langmap[lang].File+":") && !strings.HasPrefix(s, "Image:") {
 				continue
 			}
 			s = strings.Split(s, ":")[1]
 			filename := s
 			log.Infof("need to download %s", s)
-			if strings.HasSuffix(s, "webm") {
-				log.Infof("Removing from content '%s'", entry)
-				strings.ReplaceAll(c.Articles[i].Content, entry, "")
-				continue
-			}
+			/*
+				if strings.HasSuffix(s, "webm") {
+					log.Infof("Removing from content '%s'", entry)
+					strings.ReplaceAll(c.Articles[i].Content, entry, "")
+					continue
+				}
+			*/
 
 			s = strings.TrimSpace(s)
 			s = strings.Replace(s, " ", "_", -1)
@@ -337,19 +357,47 @@ func (e *V1) downloadFiles(c *Chapter, lang, folder string) error {
 	return nil
 }
 
-func removeVideo(c, lang string) string {
-	re := regexp.MustCompile(`\[\[.(.*?)\]\]`)
+func removeLink(c, lang string) string {
+	re := regexp.MustCompile(`\[\[(?s)(.*?)\]\]`)
 	sub := re.FindAllString(c, -1)
 	for _, s := range sub {
 		entry := s
 		s = strings.TrimPrefix(strings.TrimSuffix(s, "]]"), "[[")
+
+		if strings.HasPrefix(s, FilePrefix(lang)+":") || strings.HasPrefix(s, "Image:") {
+			continue
+		}
+
+		split := strings.Split(s, "|")
+		if len(split) == 1 {
+			c = strings.ReplaceAll(c, entry, split[0])
+		}
+		if len(split) >= 2 {
+			c = strings.ReplaceAll(c, entry, split[1])
+			//log.Infof("ReplaceAll '%s' with '%s'", entry, split[1])
+		}
+	}
+
+	return c
+}
+
+func removeVideo(c, lang string) string {
+	//re := regexp.MustCompile(`\[\[.(.*?)\]\]`)
+	re := regexp.MustCompile(`\[\[(?s)(.*?)\]\]`)
+	sub := re.FindAllString(c, -1)
+	for _, s := range sub {
+		entry := s
+		if strings.Contains(entry, "lason") {
+			log.Warnf("Found '%s' !!!", entry)
+		}
+		s = strings.TrimPrefix(strings.TrimSuffix(s, "]]"), "[[")
 		s = strings.Split(s, "|")[0]
-		if !strings.HasPrefix(s, langmap[lang].File+":") {
+		if !strings.HasPrefix(s, FilePrefix(lang)+":") {
 			continue
 		}
 		s = strings.Split(s, ":")[1]
 		//		if strings.HasSuffix(s, "webm") {
-		log.Infof("Removing from content '%s'", entry)
+		//		log.Infof("Removing from content '%s'", entry)
 		c = strings.ReplaceAll(c, entry, "")
 		//		}
 	}
@@ -374,4 +422,28 @@ func removeSeeAlso(c string) string {
 	}
 
 	return c
+}
+
+func removeNotesAndReferences(c string, lang string) string {
+	i := strings.Index(c, fmt.Sprintf("== %s ==", NotesAndReferences(lang)))
+	if i > 0 {
+		c = c[:i]
+		return c
+	}
+
+	i = strings.Index(c, fmt.Sprintf("==%s==", NotesAndReferences(lang)))
+	if i > 0 {
+		c = c[:i]
+		return c
+	}
+
+	return c
+}
+
+func FilePrefix(lang string) string {
+	return langmap[lang].File
+}
+
+func NotesAndReferences(lang string) string {
+	return langmap[lang].NotesAndReferences
 }

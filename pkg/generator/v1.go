@@ -200,7 +200,7 @@ func (g *V1) Print(w *Wikibook) error {
 	return nil
 }
 
-func (g *V1) Open(id string, format string) (io.Reader, error) {
+func (g *V1) Open(id string, format string) (io.ReadCloser, error) {
 
 	p := path.Join(g.workdir, fmt.Sprintf("%s.%s", id, format))
 	reader, err := os.Open(p)

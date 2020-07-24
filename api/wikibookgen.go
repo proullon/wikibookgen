@@ -228,23 +228,16 @@ func (wg *WikibookGen) Complete(value string, language string) ([]string, error)
 func (wg *WikibookGen) Download(id string, format string, w http.ResponseWriter) error {
 	log.Infof("Download request for %s.%s", id, format)
 
-	wikibook, err := wg.Load(id)
+	_, err := wg.Load(id)
 	if err != nil {
 		return err
 	}
 
 	reader, err := wg.gen.Open(id, format)
 	if err != nil {
-		log.Infof("Download: cannot open %s.%s (%s) requesting print", id, format, err)
-		err = wg.gen.Print(wikibook)
-		if err != nil {
-			return err
-		}
-		reader, err = wg.gen.Open(id, format)
-		if err != nil {
-			return err
-		}
+		return err
 	}
+	defer reader.Close()
 
 	// TODO: increase download count
 
@@ -263,4 +256,27 @@ func (wg *WikibookGen) Download(id string, format string, w http.ResponseWriter)
 	}
 
 	return nil
+}
+
+func (wg *WikibookGen) AvailableFormat(id string) (epub bool, pdf bool, err error) {
+	var reader io.ReadCloser
+
+	_, err = wg.Load(id)
+	if err != nil {
+		return false, false, err
+	}
+
+	reader, err = wg.gen.Open(id, `epub`)
+	if err == nil {
+		epub = true
+		reader.Close()
+	}
+
+	reader, err = wg.gen.Open(id, `pdf`)
+	if err == nil {
+		pdf = true
+		reader.Close()
+	}
+
+	return
 }

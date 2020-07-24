@@ -82,3 +82,16 @@ func getWikibookHandler(ctx context.Context, req *GetWikibookRequest) (*GetWikib
 func downloadWikibookHandler(ctx context.Context, req *DownloadWikibookRequest) (*Void, error) {
 	return nil, WG(ctx).Download(req.Uuid, req.Format, Writer(ctx))
 }
+
+func getAvailableDownloadFormatHandler(ctx context.Context, req *GetAvailableDownloadFormatRequest) (*GetAvailableDownloadFormatResponse, error) {
+
+	epub, pdf, err := WG(ctx).AvailableFormat(req.Uuid)
+	if err != nil {
+		return nil, err
+	}
+
+	return &GetAvailableDownloadFormatResponse{
+		Epub: epub,
+		Pdf:  pdf,
+	}, nil
+}

@@ -18,7 +18,7 @@ type Generator interface {
 	Find(string, string) (int64, error)
 	Complete(string, string) ([]string, error)
 	Print(*Wikibook) error
-	Open(string, string) (io.Reader, error)
+	Open(string, string) (io.ReadCloser, error)
 }
 
 // Loader defines objects able to retrieve article references

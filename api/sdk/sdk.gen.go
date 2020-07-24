@@ -236,6 +236,28 @@ func GetWikibook(uuid_ string) (wikibook *Wikibook, err error) {
 
 }
 
+// GetAvailableDownloadFormat : GET /wikibook/{uuid}/download/format
+func GetAvailableDownloadFormat(uuid_ string) (epub bool, pdf bool, err error) {
+
+	in := &GetAvailableDownloadFormatRequest{
+		Uuid: uuid_,
+	}
+
+	var out *GetAvailableDownloadFormatResponse
+	_ = out
+
+	switch mode {
+	case HTTP:
+		out, err = httpGetAvailableDownloadFormat(in, endpoint, token)
+	}
+	if err != nil {
+		return
+	}
+
+	return out.Epub, out.Pdf, nil
+
+}
+
 // DownloadWikibook : GET /wikibook/{uuid}/download?format={format}
 func DownloadWikibook(uuid_ string, format_ string) (err error) {
 
@@ -360,6 +382,22 @@ func httpGetWikibook(in *GetWikibookRequest, baseAddress, token string) (out *Ge
 	return
 }
 
+// GetAvailableDownloadFormat : GET /wikibook/{uuid}/download/format
+func httpGetAvailableDownloadFormat(in *GetAvailableDownloadFormatRequest, baseAddress, token string) (out *GetAvailableDownloadFormatResponse, err error) {
+
+	path := "/wikibook/{uuid}/download/format"
+	placeholders := map[string]string{
+		"uuid": fmt.Sprintf("%v", in.Uuid),
+	}
+	for k, v := range placeholders {
+		path = strings.Replace(path, "{"+k+"}", v, -1)
+	}
+
+	out = &GetAvailableDownloadFormatResponse{}
+	err = request("GET", path, in, out)
+	return
+}
+
 // DownloadWikibook : GET /wikibook/{uuid}/download?format={format}
 func httpDownloadWikibook(in *DownloadWikibookRequest, baseAddress, token string) (out *Void, err error) {
 
@@ -460,4 +498,13 @@ type ListWikibookResponse struct {
 type DownloadWikibookRequest struct {
 	Uuid   string `json:"uuid"`
 	Format string `json:"format"`
+}
+
+type GetAvailableDownloadFormatRequest struct {
+	Uuid string `json:"uuid"`
+}
+
+type GetAvailableDownloadFormatResponse struct {
+	Epub bool `json:"epub"`
+	Pdf  bool `json:"pdf"`
 }

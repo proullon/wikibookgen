@@ -10,10 +10,11 @@ import "google/api/annotations.proto";
 ** GET  /status
 ** POST /order
 ** POST /complete
-** GET  /order/{id}
+** GET  /order/{uuid}
 ** GET  /wikibook
 ** GET  /wikibook/{uuid}
-** GET  /wikibook/{uuid}/download
+** GET  /wikibook/{uuid}/download?format={format}
+** GET  /wikibook/{uuid}/download/format
 */
 service wikibookgen {
 
@@ -28,31 +29,37 @@ service wikibookgen {
       post: "/complete"
     };
   }
-  
+
   rpc Order(OrderRequest) returns (OrderResponse) {
     option (google.api.http) ={
       post: "/order"
     };
   }
-  
+
   rpc OrderStatus(OrderStatusRequest) returns (OrderStatusResponse) {
     option (google.api.http) ={
       get: "/order/{uuid}"
     };
   }
-  
+
   rpc ListWikibook(ListWikibookRequest) returns (ListWikibookResponse) {
     option (google.api.http) ={
       get: "/wikibook?page={page}&size={size}&language={language}"
     };
   }
-  
+
   rpc GetWikibook(GetWikibookRequest) returns (GetWikibookResponse) {
     option (google.api.http) ={
       get: "/wikibook/{uuid}"
     };
   }
-  
+
+  rpc GetAvailableDownloadFormat(GetAvailableDownloadFormatRequest) returns (GetAvailableDownloadFormatResponse) {
+    option (google.api.http) ={
+      get: "/wikibook/{uuid}/download/format"
+    };
+  }
+
   rpc DownloadWikibook(DownloadWikibookRequest) returns (Void) {
     option (google.api.http) ={
       get: "/wikibook/{uuid}/download?format={format}"
@@ -145,3 +152,11 @@ message DownloadWikibookRequest {
   string format = 2;
 }
 
+message GetAvailableDownloadFormatRequest {
+  string uuid = 1;
+}
+
+message GetAvailableDownloadFormatResponse {
+  bool epub = 1;
+  bool pdf = 2;
+}
