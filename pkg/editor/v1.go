@@ -91,7 +91,7 @@ var langmap map[string]i18n = map[string]i18n{
 	},
 	"fr": {
 		VolumeTitleFmt:     "%s en long, en large et en travers",
-		ChapterTitleFmt:    "Chapter %d: %s",
+		ChapterTitleFmt:    "Chapitre %d: %s",
 		File:               "Fichier",
 		SeeAlso:            "Voir aussi",
 		NotesAndReferences: "Notes et références",
@@ -110,6 +110,16 @@ func (e *V1) Version() string {
 }
 
 func (e *V1) Edit(l Loader, j Job, w *Wikibook) error {
+	w.Title = WikibookTitle(w.Language, w.Subject)
+
+	for _, v := range w.Volumes {
+		v.Title = WikibookTitle(w.Language, w.Subject)
+
+		for i, c := range v.Chapters {
+			c.Title = ChapterTitle(w.Language, i+1, c.Title)
+		}
+	}
+
 	return nil
 }
 
@@ -229,6 +239,7 @@ func (e *V1) printWikitxt(v *Volume, lang, folder, id string) error {
 	log.Infof("generating pdf %s", dst)
 
 	args := []string{
+		`-s`,
 		`--toc`,
 		`--latex-engine=xelatex`,
 		`-o`,
@@ -326,6 +337,10 @@ func (e *V1) downloadFiles(c *Chapter, lang, folder string) error {
 			}
 			s = strings.Split(s, ":")[1]
 			filename := s
+
+			if Exists(path.Join(folder, filename)) {
+				continue
+			}
 			log.Infof("need to download %s", s)
 			/*
 				if strings.HasSuffix(s, "webm") {
@@ -451,4 +466,21 @@ func FilePrefix(lang string) string {
 
 func NotesAndReferences(lang string) string {
 	return langmap[lang].NotesAndReferences
+}
+
+func WikibookTitle(lang string, subject string) string {
+	return fmt.Sprintf(langmap[lang].VolumeTitleFmt, subject)
+}
+
+func ChapterTitle(lang string, index int, subject string) string {
+	return fmt.Sprintf(langmap[lang].ChapterTitleFmt, index, subject)
+}
+
+func Exists(file string) bool {
+	reader, err := os.Open(file)
+	if err != nil {
+		return false
+	}
+	reader.Close()
+	return true
 }

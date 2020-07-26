@@ -113,9 +113,9 @@ func (g *V1) generate(j Job) error {
 	}
 
 	begin = time.Now()
-	err = g.editor.Print(loader, wikibook, g.workdir)
+	g.editor.Print(loader, wikibook, g.workdir)
 	if err != nil {
-		return err
+		log.Errorf(`Printing failed for job %+v: %s`, j, err)
 	}
 	printingDuration := time.Since(begin)
 

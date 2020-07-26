@@ -151,11 +151,11 @@ func (g *Grapher) classify(_payload interface{}) (interface{}, error) {
 	g.addToGraph(v)
 
 	// check if loading node references is pertinent
-	// stop at 3nd degree to avoid infinite loading
-	maxdegree := 3
+	// stop at geodesic distance 2 to avoid infinite loading
+	maxdistance := 2
 	trail = append(trail, v.ID)
-	if len(trail) >= maxdegree {
-		//log.Infof("Stop. cause of degree %d", maxdegree)
+	if len(trail) >= maxdistance {
+		//log.Infof("Stop. cause of degree %d", maxdistance)
 		return nil, nil
 	}
 
