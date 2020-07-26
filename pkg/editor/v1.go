@@ -53,12 +53,17 @@ ibooks:
 var chaptertmpl = `
 = {{.Title}} =
 
-Some text lol
+This is a chapter beginning.
 
-== Some test ==
+Some text lol.
+
+{{range $page := .Articles}}
+== {{.Title}} ==
+
+Some text about {{.Title}}.
+{{end}}
 
 Some more text.
-
 `
 
 /*
