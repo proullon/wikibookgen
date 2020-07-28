@@ -95,3 +95,8 @@ export class GetAvailableDownloadFormatResponse {
   pdf: boolean;
 }
 
+export class PrintWikibookRequest {
+  uuid: string;
+  format: string;
+}
+

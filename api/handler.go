@@ -95,3 +95,12 @@ func getAvailableDownloadFormatHandler(ctx context.Context, req *GetAvailableDow
 		Pdf:  pdf,
 	}, nil
 }
+
+func printWikibookHandler(ctx context.Context, req *PrintWikibookRequest) (*Void, error) {
+	err := WG(ctx).PrintWikibook(req.Uuid, req.Format)
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}

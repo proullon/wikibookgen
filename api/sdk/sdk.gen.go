@@ -281,6 +281,29 @@ func DownloadWikibook(uuid_ string, format_ string) (err error) {
 
 }
 
+// PrintWikibook : POST /wikibook/{uuid}/print/{format}
+func PrintWikibook(uuid_ string, format_ string) (err error) {
+
+	in := &PrintWikibookRequest{
+		Uuid:   uuid_,
+		Format: format_,
+	}
+
+	var out *Void
+	_ = out
+
+	switch mode {
+	case HTTP:
+		out, err = httpPrintWikibook(in, endpoint, token)
+	}
+	if err != nil {
+		return
+	}
+
+	return nil
+
+}
+
 // ------------------------- HTTP SDK -----------------------------
 
 // Status : GET /status
@@ -415,6 +438,23 @@ func httpDownloadWikibook(in *DownloadWikibookRequest, baseAddress, token string
 	return
 }
 
+// PrintWikibook : POST /wikibook/{uuid}/print/{format}
+func httpPrintWikibook(in *PrintWikibookRequest, baseAddress, token string) (out *Void, err error) {
+
+	path := "/wikibook/{uuid}/print/{format}"
+	placeholders := map[string]string{
+		"uuid":   fmt.Sprintf("%v", in.Uuid),
+		"format": fmt.Sprintf("%v", in.Format),
+	}
+	for k, v := range placeholders {
+		path = strings.Replace(path, "{"+k+"}", v, -1)
+	}
+
+	out = &Void{}
+	err = request("POST", path, in, out)
+	return
+}
+
 type Wikibook struct {
 	Uuid           string    `json:"uuid"`
 	Subject        string    `json:"subject"`
@@ -507,4 +547,9 @@ type GetAvailableDownloadFormatRequest struct {
 type GetAvailableDownloadFormatResponse struct {
 	Epub bool `json:"epub"`
 	Pdf  bool `json:"pdf"`
+}
+
+type PrintWikibookRequest struct {
+	Uuid   string `json:"uuid"`
+	Format string `json:"format"`
 }

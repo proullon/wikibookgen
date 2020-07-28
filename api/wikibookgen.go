@@ -145,10 +145,18 @@ func (wg *WikibookGen) ValidateLanguage(language string) error {
 func (wg *WikibookGen) LoadOrder(uuid string) (string, string, error) {
 	query := `SELECT status, book_id FROM job WHERE id = $1`
 
-	var status, bookID string
+	var status, bookid string
+	var bookID sql.NullString
 	err := wg.db.QueryRow(query, uuid).Scan(&status, &bookID)
+	if err != nil {
+		return ``, ``, nil
+	}
 
-	return status, bookID, err
+	if bookID.Valid {
+		bookid = bookID.String
+	}
+
+	return status, bookid, err
 }
 
 func (wg *WikibookGen) Load(uuid string) (*Wikibook, error) {
@@ -278,5 +286,21 @@ func (wg *WikibookGen) AvailableFormat(id string) (epub bool, pdf bool, err erro
 		reader.Close()
 	}
 
-	return
+	return epub, pdf, nil
+}
+
+func (wg *WikibookGen) PrintWikibook(id string, format string) error {
+	log.Infof("Print request for %s.%s", id, format)
+
+	w, err := wg.Load(id)
+	if err != nil {
+		return err
+	}
+
+	err = wg.gen.Print(w)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

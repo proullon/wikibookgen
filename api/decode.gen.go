@@ -251,6 +251,42 @@ func (d *defaultDecoder) DecodeDownloadWikibookRequest(r *http.Request) (interfa
 	return req, nil
 }
 
+func (d *defaultDecoder) DecodePrintWikibookRequest(r *http.Request) (interface{}, error) {
+	vars := mux.Vars(r)
+	_ = vars
+	r.ParseForm()
+
+	req := &PrintWikibookRequest{}
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil && err != io.EOF {
+		log.Errorf("POST /wikibook/{uuid}/print/{format}: %s\n", err)
+		return nil, ErrBadRequest
+	}
+
+	if stringvar, ok := vars["uuid"]; ok {
+		if err := convertTYPE_STRING(stringvar, &req.Uuid); err != nil {
+			return nil, fmt.Errorf("%s: %s", "uuid", err)
+		}
+	} else if stringvar := r.FormValue("uuid"); stringvar != "" {
+		if err := convertTYPE_STRING(stringvar, &req.Uuid); err != nil {
+			return nil, fmt.Errorf("%s: %s", "uuid", err)
+		}
+	}
+
+	if stringvar, ok := vars["format"]; ok {
+		if err := convertTYPE_STRING(stringvar, &req.Format); err != nil {
+			return nil, fmt.Errorf("%s: %s", "format", err)
+		}
+	} else if stringvar := r.FormValue("format"); stringvar != "" {
+		if err := convertTYPE_STRING(stringvar, &req.Format); err != nil {
+			return nil, fmt.Errorf("%s: %s", "format", err)
+		}
+	}
+
+	return req, nil
+}
+
 func convertTYPE_DOUBLE(in string, out *float64) error {
 	f, err := strconv.ParseFloat(in, 64)
 	if err != nil {

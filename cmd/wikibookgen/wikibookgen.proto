@@ -15,6 +15,7 @@ import "google/api/annotations.proto";
 ** GET  /wikibook/{uuid}
 ** GET  /wikibook/{uuid}/download?format={format}
 ** GET  /wikibook/{uuid}/download/format
+** POST /wikibook/{uuid}/print/{format}
 */
 service wikibookgen {
 
@@ -63,6 +64,12 @@ service wikibookgen {
   rpc DownloadWikibook(DownloadWikibookRequest) returns (Void) {
     option (google.api.http) ={
       get: "/wikibook/{uuid}/download?format={format}"
+    };
+  }
+
+  rpc PrintWikibook(PrintWikibookRequest) returns (Void) {
+    option (google.api.http) ={
+      post: "/wikibook/{uuid}/print/{format}"
     };
   }
 }
@@ -159,4 +166,9 @@ message GetAvailableDownloadFormatRequest {
 message GetAvailableDownloadFormatResponse {
   bool epub = 1;
   bool pdf = 2;
+}
+
+message PrintWikibookRequest {
+  string uuid = 1;
+  string format = 2;
 }
