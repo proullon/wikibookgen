@@ -263,6 +263,26 @@ func (e *V1) printWikitxt(v *Volume, lang, folder, id string) error {
 		return err
 	}
 
+	dst = path.Join(folder, fmt.Sprintf("%s.epub", id))
+	log.Infof("generating epub %s", dst)
+
+	args = []string{
+		`-s`,
+		`--toc`,
+		`-o`,
+		dst,
+		fmt.Sprintf("--epub-metadata=%s", titlename),
+	}
+	args = append(args, texfiles...)
+	log.Info(args)
+
+	cmd = exec.Command("pandoc", args...)
+	cmd.Dir = folder
+	out, err = cmd.CombinedOutput()
+	log.Infof("EPUB %s : %s", dst, out)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
