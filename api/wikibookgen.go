@@ -286,6 +286,8 @@ func (wg *WikibookGen) AvailableFormat(id string) (epub bool, pdf bool, err erro
 		reader.Close()
 	}
 
+	log.Infof("Wikibook %s. epub:%t pdf:%t", id, epub, pdf)
+
 	return epub, pdf, nil
 }
 

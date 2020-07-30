@@ -110,6 +110,7 @@ func (e *V1) Version() string {
 }
 
 func (e *V1) Edit(l Loader, j Job, w *Wikibook) error {
+	log.Infof("Editing %+v with %+v", j, w)
 	w.Title = WikibookTitle(w.Language, w.Subject)
 
 	for _, v := range w.Volumes {
@@ -469,10 +470,12 @@ func NotesAndReferences(lang string) string {
 }
 
 func WikibookTitle(lang string, subject string) string {
+	log.Infof(`Exec '%s' '%s'`, langmap[lang].VolumeTitleFmt, subject)
 	return fmt.Sprintf(langmap[lang].VolumeTitleFmt, subject)
 }
 
 func ChapterTitle(lang string, index int, subject string) string {
+	log.Infof(`Exec '%s' %d '%s'`, langmap[lang].ChapterTitleFmt, index, subject)
 	return fmt.Sprintf(langmap[lang].ChapterTitleFmt, index, subject)
 }
 

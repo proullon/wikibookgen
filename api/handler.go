@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	log "github.com/sirupsen/logrus"
+
 	. "github.com/proullon/wikibookgen/api/model"
 )
 
@@ -99,6 +101,7 @@ func getAvailableDownloadFormatHandler(ctx context.Context, req *GetAvailableDow
 func printWikibookHandler(ctx context.Context, req *PrintWikibookRequest) (*Void, error) {
 	err := WG(ctx).PrintWikibook(req.Uuid, req.Format)
 	if err != nil {
+		log.Errorf("Cannot print %+v: %s", req, err)
 		return nil, err
 	}
 
