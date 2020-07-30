@@ -131,6 +131,8 @@ func (g *V1) Version() string {
 // insertWikibook insertWikibook inserts newly generated wikibook and
 // set job status to DONE
 func (g *V1) insertWikibook(j Job, wikibook *Wikibook) error {
+	wikibook.Uuid = j.ID
+	wikibook.Language = j.Language
 
 	toc, err := json.Marshal(wikibook)
 	if err != nil {
