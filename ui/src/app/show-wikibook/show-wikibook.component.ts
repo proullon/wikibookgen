@@ -4,7 +4,7 @@ import { Location } from '@angular/common';
 import { NestedTreeControl } from '@angular/cdk/tree';
 import { MatTreeModule, MatTreeNestedDataSource } from '@angular/material/tree';
 
-import { Wikibook } from '../wikibook';
+import { Wikibook, GetAvailableDownloadFormatResponse } from '../wikibook';
 import { WikibookgenService } from '../wikibookgen.service'; 
 
 class WikibookNode {
@@ -29,6 +29,11 @@ export class ShowWikibookComponent implements OnInit {
   treeControl = new NestedTreeControl<WikibookNode>(node => node.nodes);
   dataSource = new MatTreeNestedDataSource<WikibookNode>();
 
+  epubAvailable: boolean = false;
+  epubPrintButtonText: string = 'Request print';
+  pdfAvailable: boolean = false;
+  pdfPrintButtonText: string = 'Request print';
+
   @Input() wikibook: Wikibook;
 
   constructor(
@@ -42,6 +47,36 @@ export class ShowWikibookComponent implements OnInit {
   ngOnInit(): void {
     const uuid = this.route.snapshot.paramMap.get('id');
     this.getWikibook(uuid);
+    this.getAvailableDownloadFormat(uuid);
+  }
+
+  getAvailableDownloadFormat(uuid: string): void {
+    this.wikibookgenService.getAvailableDownloadFormat(uuid)
+      .subscribe((r:GetAvailableDownloadFormatResponse) => {
+        this.epubAvailable = r.epub;
+        this.pdfAvailable = r.pdf;
+      });
+  }
+
+  print(uuid: string, format: string) {
+    if (format == 'epub') {
+      this.epubPrintButtonText = 'Printing';
+    }
+    if (format == 'pdf') {
+      this.pdfPrintButtonText = 'Printing';
+    }
+
+    this.wikibookgenService.print(uuid, format)
+      .subscribe((r:any) => {
+        if (format == 'epub') {
+          this.epubPrintButtonText = 'Done';
+        }
+        if (format == 'pdf') {
+          this.pdfPrintButtonText = 'Done';
+        }
+        this.getAvailableDownloadFormat(uuid);
+      });
+
   }
 
   getWikibook(uuid: string): void {

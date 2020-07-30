@@ -1,4 +1,10 @@
 
+
+<div *ngIf="!wikibook">
+<h1>Loading...</h1>
+</div>
+
+<div *ngIf="wikibook">
 <h1>Title: {{wikibook.title}}</h1>
 
 <h2>Description</h2>
@@ -6,10 +12,29 @@
 Wikibook of type <b>{{wikibook.model}}</b>. {{wikibook.pages}} pages.
 
 <h2> Download </h2>
-<p>
-<a href="https://api.wikibookgen.org/wikibook/{{wikibook.uuid}}/download?format=epub">epub</a>
-<a href="https://api.wikibookgen.org/wikibook/{{wikibook.uuid}}/download?format=pdf">pdf</a>
-</p>
+
+<table>
+  <tr>
+    <th>Format</th>
+    <th>Link</th>
+  </tr>
+  <tr>
+    <td>Epub</td>
+    <td>
+      <div *ngIf="epubAvailable"><a href="https://api.wikibookgen.org/wikibook/{{wikibook.uuid}}/download?format=epub">download</a></div>
+      <div *ngIf="!epubAvailable"><button (click)="print(wikibook.uuid, 'epub')">{{epubPrintButtonText}}</button></div>
+    </td>
+  </tr>
+  <tr>
+    <td>PDF</td>
+    <td>
+      <div *ngIf="pdfAvailable"><a href="https://api.wikibookgen.org/wikibook/{{wikibook.uuid}}/download?format=pdf">download</a></div>
+      <div *ngIf="!pdfAvailable"><button (click)="print(wikibook.uuid, 'pdf')">{{pdfPrintButtonText}}</button></div>
+    </td>
+  </tr>
+</table>
+
+<br/>
 
 <h2>Table of content</h2>
 
@@ -44,3 +69,4 @@ Wikibook of type <b>{{wikibook.model}}</b>. {{wikibook.pages}} pages.
 
 </div>
 
+</div>

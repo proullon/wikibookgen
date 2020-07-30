@@ -4,7 +4,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 
-import { Wikibook, ListWikibookRequest, ListWikibookResponse, CompleteRequest, OrderRequest, OrderStatusResponse } from './wikibook';
+import { Wikibook, ListWikibookRequest, ListWikibookResponse, CompleteRequest, OrderRequest, OrderStatusResponse, PrintWikibookRequest, GetAvailableDownloadFormatRequest, GetAvailableDownloadFormatResponse } from './wikibook';
 import { environment } from './../environments/environment';
 
 @Injectable({
@@ -78,7 +78,33 @@ export class WikibookgenService {
         map((result:any)=>{
           return result.uuid
         }),
-        catchError(this.handleError('complete', null))
+        catchError(this.handleError('order', null))
+      );
+  }
+
+  public print(id: string, format: string): Observable<boolean> {
+    console.log('request print for '+ id + '.' + format);
+    var req: PrintWikibookRequest = {
+      uuid: id,
+      format: format,
+    }
+    return this.http.post<boolean>(`${this.api}/wikibook/${id}/print/${format}`, req)
+      .pipe(
+        map((result:any)=>{
+          return true
+        }),
+        catchError(this.handleError('print', null))
+      );
+  }
+
+  public getAvailableDownloadFormat(uuid: string): Observable<GetAvailableDownloadFormatResponse> {
+    console.log('getAvailableDownloadFormat ' + uuid);
+    return this.http.get<GetAvailableDownloadFormatResponse>(`${this.api}/wikibook/${uuid}/download/format`)
+      .pipe(
+        map((result:any)=>{
+          return result
+        }),
+        catchError(this.handleError('getAvailableDownloadFormat', null))
       );
   }
 
