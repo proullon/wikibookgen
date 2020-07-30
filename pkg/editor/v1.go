@@ -111,6 +111,11 @@ func (e *V1) Version() string {
 
 func (e *V1) Edit(l Loader, j Job, w *Wikibook) error {
 	log.Infof("Editing %+v with %+v", j, w)
+
+	if w.Language == `` {
+		return fmt.Errorf("Edit: Wikibook language not set")
+	}
+
 	w.Title = WikibookTitle(w.Language, w.Subject)
 
 	for _, v := range w.Volumes {
@@ -252,7 +257,8 @@ func (e *V1) printWikitxt(v *Volume, lang, folder, id string) error {
 
 	cmd := exec.Command("pandoc", args...)
 	cmd.Dir = folder
-	err = cmd.Run()
+	out, err := cmd.CombinedOutput()
+	log.Infof("PDF %s : %s", dst, out)
 	if err != nil {
 		return err
 	}

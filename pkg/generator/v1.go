@@ -205,6 +205,7 @@ func (g *V1) Print(w *Wikibook) error {
 func (g *V1) Open(id string, format string) (io.ReadCloser, error) {
 
 	p := path.Join(g.workdir, fmt.Sprintf("%s.%s", id, format))
+	log.Infof("Looking for %s", p)
 	reader, err := os.Open(p)
 	if err != nil {
 		return nil, err

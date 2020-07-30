@@ -55,8 +55,9 @@ func (o *V1) Order(l Loader, j Job, g graph.Directed, clusters *Cluster) (*Wikib
 
 func (o *V1) GenTour(l Loader, j Job, g graph.Directed, cluster *Cluster) (*Wikibook, error) {
 	wikibook := &Wikibook{
-		Subject: j.Subject,
-		Title:   j.Subject,
+		Language: j.Language,
+		Subject:  j.Subject,
+		Title:    j.Subject,
 	}
 
 	v, pages, err := o.VolumeThis(l, j, g, cluster)
