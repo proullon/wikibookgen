@@ -39,7 +39,7 @@ stop: ## stop docker container
 	docker rm -f $(DOCKER_NAME) || true
 
 run: stop ## start docker container
-	docker run -d --mount type=bind,source=$(MOUNT_POINT),target=/tmp/wikibookgen --name $(DOCKER_NAME) -p $(EXPOSED_PORT):8080 -e CRDB_HOST=$(CRDB_HOST) $(DOCKER_IMAGE):latest
+	docker run --restart=always -d --mount type=bind,source=$(MOUNT_POINT),target=/tmp/wikibookgen --name $(DOCKER_NAME) -p $(EXPOSED_PORT):8080 -e CRDB_HOST=$(CRDB_HOST) $(DOCKER_IMAGE):latest
 
 logs: ## show docker logs
 	docker logs -f $(DOCKER_NAME)

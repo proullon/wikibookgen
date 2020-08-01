@@ -27,7 +27,7 @@ package: ## package docker image
 
 run:
 	docker rm -f ${CONTAINER} || true
-	docker run -d --name ${CONTAINER} -p 4061:4200 ${IMAGE}:preprod
+	docker run --restart=always -d --name ${CONTAINER} -p 4061:4200 ${IMAGE}:preprod
 
 push:
 	docker push ${IMAGE}:production
