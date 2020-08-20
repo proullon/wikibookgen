@@ -1,10 +1,15 @@
-<mat-sidenav-container class="sidenav-container">
-  <mat-sidenav class="sidenav" mode="side" opened>
-    <mat-nav-list>
+
+ <mat-toolbar color="primary" *ngIf="isMobile" class="mobile-toolbar">
+  <button mat-icon-button (click)="snav.toggle()"><mat-icon>menu</mat-icon></button>
+  <h1>WikibookGen</h1>
+</mat-toolbar>
+<mat-sidenav-container class="sidenav-container" autosize>
+  <mat-sidenav #snav class="sidenav" [mode]="isMobile ? 'over' : 'side'" [opened]="!isMobile">
+    <mat-nav-list *ngIf="!isMobile">
       <div class="logo-nav"><img src="/assets/logo.png" alt="logo"></div>
     </mat-nav-list>
 
-    <mat-toolbar>
+    <mat-toolbar *ngIf="!isMobile">
       <mat-toolbar-row>
           WikibookGen
       </mat-toolbar-row>
