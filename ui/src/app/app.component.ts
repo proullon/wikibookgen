@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { BreakpointObserver } from '@angular/cdk/layout';
 
 @Component({
   selector: 'app-root',
@@ -7,4 +8,14 @@ import { Component } from '@angular/core';
 })
 export class AppComponent {
   title = 'ui';
+  isMobile = false;
+
+  constructor(mobileBreakPointObserver: BreakpointObserver) {
+   const layoutChange =  mobileBreakPointObserver.observe('(max-width: 768px)');
+
+   layoutChange.subscribe((result) => {
+     this.isMobile = result.matches;
+     console.log(this.isMobile);
+   });
+  }
 }
