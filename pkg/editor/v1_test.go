@@ -2,6 +2,7 @@ package editor
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"testing"
 
@@ -45,6 +46,7 @@ func editorTest(e Editor, t *testing.T) {
 	if err != nil {
 		t.Fatalf("Edit: %s", err)
 	}
+	fmt.Printf(`%+v\n`, w)
 
 	err = e.Print(l, w, "../../samples/output")
 	if err != nil {
