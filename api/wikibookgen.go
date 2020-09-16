@@ -236,7 +236,7 @@ func (wg *WikibookGen) Complete(value string, language string) ([]string, error)
 func (wg *WikibookGen) Download(id string, format string, w http.ResponseWriter) error {
 	log.Infof("Download request for %s.%s", id, format)
 
-	_, err := wg.Load(id)
+	wikibook, err := wg.Load(id)
 	if err != nil {
 		return err
 	}
@@ -249,14 +249,20 @@ func (wg *WikibookGen) Download(id string, format string, w http.ResponseWriter)
 
 	// TODO: increase download count
 
+	var filename string
 	switch format {
 	case "epub":
 		w.Header().Set("Content-Type", "application/epub+zip")
+		filename = fmt.Sprintf("%s.epub", wikibook.Title)
 	case "pdf":
 		w.Header().Set("Content-Type", "application/pdf")
+		filename = fmt.Sprintf("%s.pdf", wikibook.Title)
 	default:
 		w.Header().Set("Content-Type", "text/plain")
+		filename = fmt.Sprintf("%s.txt", wikibook.Title)
 	}
+
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
 
 	_, err = io.Copy(w, reader)
 	if err != nil {
