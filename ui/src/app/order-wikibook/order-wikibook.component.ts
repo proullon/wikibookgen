@@ -7,6 +7,12 @@ import { Location } from '@angular/common';
 import { Wikibook } from '../wikibook';
 import { WikibookgenService } from '../wikibookgen.service'; 
 
+interface Language {
+  value: string;
+  viewValue: string;
+}
+
+
 @Component({
   selector: 'app-order-wikibook',
   templateUrl: './order-wikibook.component.html',
@@ -15,14 +21,19 @@ import { WikibookgenService } from '../wikibookgen.service';
 export class OrderWikibookComponent implements OnInit {
   myControl = new FormControl();
   filteredOptions$: Observable<string[]>;
-  language: string;
+  selectedLanguage: string;
   model: string;
+
+  langs: Language[] = [
+    {value: 'en', viewValue: 'English'},
+    {value: 'fr', viewValue: 'Français'}
+  ];
 
   constructor(
     private wikibookgenService: WikibookgenService,
     private location: Location,
   ) {
-    this.language = 'en';
+    this.selectedLanguage = 'en';
     this.model = 'tour';
   }
   
@@ -33,13 +44,13 @@ export class OrderWikibookComponent implements OnInit {
       debounceTime(300),
       // ignore new term if same as previous term
       distinctUntilChanged(),
-      switchMap(value => this.wikibookgenService.autocomplete(value, this.language))
+      switchMap(value => this.wikibookgenService.autocomplete(value, this.selectedLanguage))
     );
   }
 
   public orderWikibook() {
     console.log("Ordering " + this.myControl.value);
-    this.wikibookgenService.order(this.myControl.value, this.language, this.model)
+    this.wikibookgenService.order(this.myControl.value, this.selectedLanguage, this.model)
       .subscribe((orderID: string) => {
         console.log('wikibook order ' + orderID + ' generating, redirecting...');
         this.location.go('/wikibook/order/'+ orderID, '', null);

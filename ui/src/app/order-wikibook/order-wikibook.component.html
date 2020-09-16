@@ -4,12 +4,21 @@
 
 <form class="order-form">
   <mat-form-field>
-    <input type="text"
-           placeholder="Enter wikipedia article name"
-           aria-label="Text"
-           matInput
-           [formControl]="myControl"
-           [matAutocomplete]="auto">
+    <mat-label>Favorite lang</mat-label>
+    <mat-select [(ngModel)]="selectedLanguage" name="lang">
+      <mat-option *ngFor="let lang of langs" [value]="lang.value">
+        {{lang.viewValue}}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field>
+  <input type="text"
+         placeholder="Enter wikipedia article name"
+         aria-label="Text"
+         matInput
+         [formControl]="myControl"
+         [matAutocomplete]="auto">
     <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
       <mat-option *ngFor="let option of filteredOptions$ | async" [value]="option">
         {{option}}
