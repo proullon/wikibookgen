@@ -90,7 +90,6 @@ var texintrotmpl = `
 \newcommand*{\Q}{\mathbb{Q}}
 \newcommand*{\Complex}{\mathbb{C}}
 
-
 \begin{document}
 \title{[[.Title]]}
 \author{WikibookGen}
@@ -352,10 +351,10 @@ func (e *V1) printWikitxt(v *Volume, lang, folder, id string) error {
 		`--pdf-engine=xelatex`,
 		`-o`,
 		dst,
-		introname,
+		intropath,
 	}
 	args = append(args, texfiles...)
-	args = append(args, outroname)
+	args = append(args, outropath)
 
 	log.Info(args)
 
@@ -399,14 +398,19 @@ func (e *V1) generateChapterPDF(srcname, folder, id string, idx int) error {
 	dst := path.Join(folder, fmt.Sprintf("%s-chapter%d.pdf", id, idx))
 	log.Infof("generating pdf %s", dst)
 
+	introname := fmt.Sprintf("%s-intro.tex", id)
+	intropath := path.Join(folder, introname)
+	outroname := fmt.Sprintf("%s-outro.tex", id)
+	outropath := path.Join(folder, outroname)
+
 	args := []string{
 		`-s`,
 		`--pdf-engine=xelatex`,
 		`-o`,
 		dst,
-		`title.tex`,
+		intropath,
 		srcname,
-		`end.tex`,
+		outropath,
 	}
 
 	log.Info(args)

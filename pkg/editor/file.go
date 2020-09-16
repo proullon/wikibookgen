@@ -50,7 +50,7 @@ func locatewikifile(s string, domain string) (string, error) {
 	urlfmt := `https://%s/w/api.php?action=query&titles=File%%3A%s&prop=imageinfo&iiprop=url&format=json`
 	url := fmt.Sprintf(urlfmt, domain, s)
 
-	log.Infof("Querying %s", url)
+	log.Debugf("Querying %s", url)
 
 	res, err := http.Get(url)
 	if err != nil {
