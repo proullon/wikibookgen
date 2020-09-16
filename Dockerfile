@@ -35,6 +35,7 @@ FROM debian:stretch AS final
 
 # pandoc to export books as epub and pdf
 RUN apt-get update && apt-get install -y pandoc wget texlive-xetex texlive-math-extra librsvg2-bin
+RUN  sudo apt-get install -y texlive-full
 RUN wget https://github.com/jgm/pandoc/releases/download/2.10.1/pandoc-2.10.1-1-amd64.deb
 RUN dpkg -i pandoc-2.10.1-1-amd64.deb
 

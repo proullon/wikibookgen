@@ -519,7 +519,7 @@ func (e *V1) downloadFiles(c *Chapter, lang, folder string) ([]string, error) {
 			if Exists(path.Join(folder, filename)) {
 				continue
 			}
-			log.Infof("need to download %s", s)
+			log.Debugf("need to download %s", s)
 			/*
 				if strings.HasSuffix(s, "webm") {
 					log.Infof("Removing from content '%s'", entry)
@@ -544,7 +544,7 @@ func (e *V1) downloadFiles(c *Chapter, lang, folder string) ([]string, error) {
 
 			dst := path.Join(folder, filename)
 			cmd := exec.Command("wget", url, "-O", dst)
-			log.Infof("running %v", cmd)
+			log.Debugf("running %v", cmd)
 			err := cmd.Run()
 			if err != nil {
 				log.Errorf("WGET: %s", err)
