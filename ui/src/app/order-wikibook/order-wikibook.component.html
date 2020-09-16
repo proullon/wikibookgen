@@ -3,16 +3,16 @@
 <p>Write the name of an existing Wikipedia article to give WikibookGen a starting point.</p>
 
 <form class="order-form">
-  <mat-form-field>
+  <p><mat-form-field>
     <mat-label>Favorite lang</mat-label>
     <mat-select [(ngModel)]="selectedLanguage" name="lang">
       <mat-option *ngFor="let lang of langs" [value]="lang.value">
         {{lang.viewValue}}
       </mat-option>
     </mat-select>
-  </mat-form-field>
+  </mat-form-field></p>
 
-  <mat-form-field>
+  <p><mat-form-field class="article-autocomplete-field">
   <input type="text"
          placeholder="Enter wikipedia article name"
          aria-label="Text"
@@ -24,8 +24,8 @@
         {{option}}
       </mat-option>
     </mat-autocomplete>
-  </mat-form-field>
+  </mat-form-field></p>
   
-  <button mat-stroked-button (click)="orderWikibook()">Generate!</button>
+  <p><button mat-stroked-button (click)="orderWikibook()">Generate!</button></p>
 
 </form>
