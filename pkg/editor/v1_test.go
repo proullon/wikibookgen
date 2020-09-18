@@ -27,10 +27,6 @@ func loadWikibook(p string) (*Wikibook, error) {
 }
 
 func editorTest(e Editor, t *testing.T) {
-	j := Job{
-		Model:   string(TOUR),
-		Subject: "Mathematiques",
-	}
 
 	l, err := loader.NewFileLoader("../../samples/mathematiques.dump.json")
 	if err != nil {
@@ -42,7 +38,7 @@ func editorTest(e Editor, t *testing.T) {
 		t.Fatalf("cannot load wikibook: %s", err)
 	}
 
-	err = e.Edit(l, j, w)
+	err = e.Edit(l, w)
 	if err != nil {
 		t.Fatalf("Edit: %s", err)
 	}

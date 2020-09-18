@@ -305,10 +305,15 @@ func (wg *WikibookGen) PrintWikibook(id string, format string) error {
 		return err
 	}
 
-	err = wg.gen.Print(w)
-	if err != nil {
-		return err
+	// check if wikibook is already printing
+	reader, err := wg.gen.Open(id, `yml`)
+	if err == nil {
+		log.Infof("Wikibook %s printing process already started", id)
+		reader.Close()
+		return nil
 	}
+
+	go wg.gen.Print(w)
 
 	return nil
 }

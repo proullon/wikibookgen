@@ -59,7 +59,7 @@ type Orderer interface {
 // Editor interface defines objects able to edit graph clusters into
 // a humain readable table of content
 type Editor interface {
-	Edit(Loader, Job, *Wikibook) error
+	Edit(Loader, *Wikibook) error
 	Print(Loader, *Wikibook, string) error
 	Version() string
 }

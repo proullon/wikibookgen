@@ -95,7 +95,7 @@ func (g *V1) generate(j Job) error {
 	log.Infof("Generate: %+v inserting wikibook", j)
 
 	begin = time.Now()
-	err = g.editor.Edit(loader, j, wikibook)
+	err = g.editor.Edit(loader, wikibook)
 	if err != nil {
 		return err
 	}
@@ -194,7 +194,12 @@ func (g *V1) Print(w *Wikibook) error {
 		return fmt.Errorf("Loader for lang=%s not available", w.Language)
 	}
 
-	err := g.editor.Print(loader, w, g.workdir)
+	err := g.editor.Edit(loader, w)
+	if err != nil {
+		return err
+	}
+
+	err = g.editor.Print(loader, w, g.workdir)
 	if err != nil {
 		return err
 	}

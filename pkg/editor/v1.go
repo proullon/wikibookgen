@@ -54,13 +54,13 @@ Title page ?
 `
 
 var texintrotmpl = `
-\documentclass[11pt,a4paper]{article}
+\documentclass[11pt,a4paper]{book}
 
 \usepackage{geometry}
 \geometry{
   a4paper,
   total={170mm,257mm},
-  left=20mm,
+  left=10mm,
   top=20mm,
 }
 
@@ -81,14 +81,15 @@ var texintrotmpl = `
 
 \defaultfontfeatures{Scale=MatchUppercase}
 
-\setmainfont{TeX Gyre Schola}
-\setmathfont{TeX Gyre Schola Math}
+%\setmainfont{TeX Gyre Schola}
+%\setmathfont{TeX Gyre Schola Math}
 
 \newcommand{\R}{\mathbb{R}}
 \newcommand*{\Z}{\mathbb{Z}}
 \newcommand*{\N}{\mathbb{N}}
 \newcommand*{\Q}{\mathbb{Q}}
 \newcommand*{\Complex}{\mathbb{C}}
+\newcommand*{\sqrt}{\mathbb{sqrt}}
 
 \begin{document}
 \title{[[.Title]]}
@@ -163,8 +164,12 @@ func (e *V1) Version() string {
 	return "1"
 }
 
-func (e *V1) Edit(l Loader, j Job, w *Wikibook) error {
-	log.Infof("Editing %+v with %+v", j, w)
+func (e *V1) Edit(l Loader, w *Wikibook) error {
+	log.Infof("Editing %+v", w)
+
+	if w.Subject == `` {
+		return fmt.Errorf("Edit: Wikibook subject not set")
+	}
 
 	if w.Language == `` {
 		return fmt.Errorf("Edit: Wikibook language not set")
@@ -263,6 +268,7 @@ func (e *V1) printWikitxt(v *Volume, lang, folder, id string) error {
 	}
 	log.Infof("Wikibook volume '%s' written in %s", v.Title, titlepath)
 	f.Close()
+	toremove = append(toremove, titlepath)
 
 	introname := fmt.Sprintf("%s-intro.tex", id)
 	intropath := path.Join(folder, introname)
@@ -278,6 +284,7 @@ func (e *V1) printWikitxt(v *Volume, lang, folder, id string) error {
 	}
 	log.Infof("Wikibook tex intro '%s' written in %s", v.Title, intropath)
 	f.Close()
+	toremove = append(toremove, intropath)
 
 	outroname := fmt.Sprintf("%s-outro.tex", id)
 	outropath := path.Join(folder, outroname)
@@ -293,6 +300,7 @@ func (e *V1) printWikitxt(v *Volume, lang, folder, id string) error {
 	}
 	log.Infof("Wikibook tex outtro '%s' written in %s", v.Title, outropath)
 	f.Close()
+	toremove = append(toremove, outropath)
 
 	var texfiles []string
 	var dest string
@@ -304,13 +312,14 @@ func (e *V1) printWikitxt(v *Volume, lang, folder, id string) error {
 			log.Errorf("cannot open file %s: %s", dest, err)
 			continue
 		}
-		defer f.Close()
 		err = chapter.Execute(f, c)
+		f.Close()
 		if err != nil {
 			log.Errorf("cannot execute chapter template for %s: %s", c.Title, err)
 			continue
 		}
 		log.Infof("Wikibook volume chapter written in %s", dest)
+		toremove = append(toremove, dest)
 
 		texname := fmt.Sprintf("%s-%d.tex", id, i+1)
 		tex := path.Join(folder, texname)
@@ -319,6 +328,7 @@ func (e *V1) printWikitxt(v *Volume, lang, folder, id string) error {
 			log.Errorf("cannot convert %s to tex: %s", dest, err)
 			continue
 		}
+		toremove = append(toremove, tex)
 
 		chapterfiles, err := e.downloadFiles(c, lang, folder)
 		if err != nil {
@@ -334,12 +344,6 @@ func (e *V1) printWikitxt(v *Volume, lang, folder, id string) error {
 		}
 
 		texfiles = append(texfiles, texname)
-		//texfiles = append(texfiles, dest)
-		/*
-			if len(texfiles) == 2 {
-				break
-			}
-		*/
 	}
 
 	dst := path.Join(folder, fmt.Sprintf("%s.pdf", id))
@@ -388,6 +392,7 @@ func (e *V1) printWikitxt(v *Volume, lang, folder, id string) error {
 	}
 
 	for _, fname := range toremove {
+		log.Infof("Removing %s", fname)
 		os.Remove(fname)
 	}
 
@@ -515,6 +520,10 @@ func (e *V1) downloadFiles(c *Chapter, lang, folder string) ([]string, error) {
 			}
 			s = strings.Split(s, ":")[1]
 			filename := s
+
+			// replace space by underscore
+			filename = strings.ReplaceAll(filename, ` `, `_`)
+			a.Content = strings.ReplaceAll(a.Content, ` `, `_`)
 
 			if Exists(path.Join(folder, filename)) {
 				continue
