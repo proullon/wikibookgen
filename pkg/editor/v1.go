@@ -318,7 +318,7 @@ func (e *V1) printWikitxt(v *Volume, lang, folder, id string) error {
 			log.Errorf("cannot execute chapter template for %s: %s", c.Title, err)
 			continue
 		}
-		log.Infof("Wikibook volume chapter written in %s", dest)
+		log.Debugf("Wikibook volume chapter written in %s", dest)
 		toremove = append(toremove, dest)
 
 		texname := fmt.Sprintf("%s-%d.tex", id, i+1)
@@ -339,10 +339,11 @@ func (e *V1) printWikitxt(v *Volume, lang, folder, id string) error {
 
 		err = e.generateChapterPDF(texname, folder, id, i+1)
 		if err != nil {
-			log.Errorf("cannot generate pdf for chapter %s: %s", dest, err)
+			log.Debugf("cannot generate pdf for chapter %s: %s", dest, err)
 			continue
 		}
 
+		log.Infof("chapter %d added to corpus", i+1)
 		texfiles = append(texfiles, texname)
 	}
 
@@ -362,12 +363,14 @@ func (e *V1) printWikitxt(v *Volume, lang, folder, id string) error {
 
 	log.Info(args)
 
-	cmd := exec.Command("pandoc", args...)
-	cmd.Dir = folder
-	out, err := cmd.CombinedOutput()
-	log.Infof("PDF %s : %s", dst, out)
-	if err != nil {
-		log.Errorf("%s: %s", dst, err)
+	for i := 0; i < 3; i++ {
+		cmd := exec.Command("pandoc", args...)
+		cmd.Dir = folder
+		out, err := cmd.CombinedOutput()
+		log.Infof("PDF %s : %s", dst, out)
+		if err != nil {
+			log.Errorf("%s: %s", dst, err)
+		}
 	}
 
 	dst = path.Join(folder, fmt.Sprintf("%s.epub", id))
@@ -383,16 +386,18 @@ func (e *V1) printWikitxt(v *Volume, lang, folder, id string) error {
 	args = append(args, texfiles...)
 	log.Info(args)
 
-	cmd = exec.Command("pandoc", args...)
-	cmd.Dir = folder
-	out, err = cmd.CombinedOutput()
-	log.Infof("EPUB %s : %s", dst, out)
-	if err != nil {
-		log.Errorf("%s: %s", dst, err)
+	for i := 0; i < 3; i++ {
+		cmd := exec.Command("pandoc", args...)
+		cmd.Dir = folder
+		out, err := cmd.CombinedOutput()
+		log.Infof("EPUB %s : %s", dst, out)
+		if err != nil {
+			log.Errorf("%s: %s", dst, err)
+		}
 	}
 
 	for _, fname := range toremove {
-		log.Infof("Removing %s", fname)
+		log.Debugf("Removing %s", fname)
 		os.Remove(fname)
 	}
 
@@ -401,7 +406,6 @@ func (e *V1) printWikitxt(v *Volume, lang, folder, id string) error {
 
 func (e *V1) generateChapterPDF(srcname, folder, id string, idx int) error {
 	dst := path.Join(folder, fmt.Sprintf("%s-chapter%d.pdf", id, idx))
-	log.Infof("generating pdf %s", dst)
 
 	introname := fmt.Sprintf("%s-intro.tex", id)
 	intropath := path.Join(folder, introname)
@@ -418,14 +422,14 @@ func (e *V1) generateChapterPDF(srcname, folder, id string, idx int) error {
 		outropath,
 	}
 
-	log.Info(args)
+	log.Debugf("Running pandoc %s", args)
 	cmd := exec.Command("pandoc", args...)
 	cmd.Dir = folder
 	out, err := cmd.CombinedOutput()
-	log.Infof("PDF %s : %s", dst, out)
 	if err != nil {
 		return err
 	}
+	log.Debugf(`chapter pdf output: %s`, out)
 
 	// remove if successful, not needed
 	os.Remove(dst)
@@ -434,7 +438,7 @@ func (e *V1) generateChapterPDF(srcname, folder, id string, idx int) error {
 }
 
 func (e *V1) convertTex(src, dst string) error {
-	log.Infof("Writing tex chapter in %s", dst)
+	log.Debugf("Writing tex chapter in %s", dst)
 
 	cmd := exec.Command("pandoc", `-f`, `mediawiki`, src, "-o", dst)
 	err := cmd.Run()
@@ -442,7 +446,6 @@ func (e *V1) convertTex(src, dst string) error {
 		return err
 	}
 
-	log.Infof("Wikibook tex chapter written in %s", dst)
 	return nil
 }
 
@@ -548,7 +551,7 @@ func (e *V1) downloadFiles(c *Chapter, lang, folder string) ([]string, error) {
 			if u, err := LocateWikiFile(s, lang); err == nil {
 				url = u
 			} else {
-				log.Infof("LocateWikiFile: %s", err)
+				log.Infof("LocateWikiFile(%s, %s): %s", s, lang, err)
 			}
 
 			dst := path.Join(folder, filename)
@@ -606,17 +609,17 @@ func removeVideo(c, lang string) string {
 
 		s = strings.Split(s, ":")[1]
 		if strings.HasSuffix(strings.ToLower(s), "webm") {
-			log.Infof("Removing from content '%s'", entry)
+			log.Debugf("Removing from content '%s'", entry)
 			c = strings.ReplaceAll(c, entry, "")
 		}
 
 		if strings.HasSuffix(strings.ToLower(s), "ogv") {
-			log.Infof("Removing from content '%s'", entry)
+			log.Debugf("Removing from content '%s'", entry)
 			c = strings.ReplaceAll(c, entry, "")
 		}
 
 		if strings.HasSuffix(strings.ToLower(s), "pdf") {
-			log.Infof("Removing from content '%s'", entry)
+			log.Debugf("Removing from content '%s'", entry)
 			c = strings.ReplaceAll(c, entry, "")
 		}
 		/*
@@ -691,12 +694,12 @@ func NotesAndReferences(lang string) string {
 }
 
 func WikibookTitle(lang string, subject string) string {
-	log.Infof(`Exec '%s' '%s'`, langmap[lang].VolumeTitleFmt, subject)
+	log.Debugf(`Exec '%s' '%s'`, langmap[lang].VolumeTitleFmt, subject)
 	return fmt.Sprintf(langmap[lang].VolumeTitleFmt, subject)
 }
 
 func ChapterTitle(lang string, index int, subject string) string {
-	log.Infof(`Exec '%s' %d '%s'`, langmap[lang].ChapterTitleFmt, index, subject)
+	log.Debugf(`Exec '%s' %d '%s'`, langmap[lang].ChapterTitleFmt, index, subject)
 	return fmt.Sprintf(langmap[lang].ChapterTitleFmt, index, subject)
 }
 
