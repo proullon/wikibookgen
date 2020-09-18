@@ -251,8 +251,8 @@ func (e *V1) printWikitxt(v *Volume, lang, folder, id string) error {
 	// create a new template and parse the wikibook format into it.
 	title := template.Must(template.New("wikibook-title").Parse(yamltitletmpl))
 	chapter := template.Must(template.New("wikibook-chapter").Parse(chaptertmpl))
-	texintro := template.Must(template.New("wikibook-tex-intro").Parse(texintrotmpl))
-	texoutro := template.Must(template.New("wikibook-tex-outro").Parse(texoutrotmpl))
+	texintro := template.Must(template.New("wikibook-tex-intro").Delims(`[[`, `]]`).Parse(texintrotmpl))
+	texoutro := template.Must(template.New("wikibook-tex-outro").Delims(`[[`, `]]`).Parse(texoutrotmpl))
 
 	titlename := fmt.Sprintf("%s.yml", id)
 	titlepath := path.Join(folder, titlename)
@@ -278,7 +278,7 @@ func (e *V1) printWikitxt(v *Volume, lang, folder, id string) error {
 	}
 	defer f.Close()
 
-	err = texintro.Delims(`[[`, `]]`).Execute(f, v)
+	err = texintro.Execute(f, v)
 	if err != nil {
 		return err
 	}
@@ -294,7 +294,7 @@ func (e *V1) printWikitxt(v *Volume, lang, folder, id string) error {
 	}
 	defer f.Close()
 
-	err = texoutro.Delims(`[[`, `]]`).Execute(f, v)
+	err = texoutro.Execute(f, v)
 	if err != nil {
 		return err
 	}
