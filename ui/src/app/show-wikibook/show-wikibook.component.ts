@@ -53,8 +53,21 @@ export class ShowWikibookComponent implements OnInit {
   getAvailableDownloadFormat(uuid: string): void {
     this.wikibookgenService.getAvailableDownloadFormat(uuid)
       .subscribe((r:GetAvailableDownloadFormatResponse) => {
-        this.epubAvailable = r.epub;
-        this.pdfAvailable = r.pdf;
+        if (r.epub == 'exists') {
+          this.epubAvailable = true;
+        }
+        if (r.epub == 'printing') {
+          this.epubAvailable = false;
+          this.epubPrintButtonText = 'Printing';
+        }
+
+        if (r.pdf == 'exists') {
+          this.pdfAvailable = true;
+        }
+        if (r.pdf == 'printing') {
+          this.pdfAvailable = false;
+          this.pdfPrintButtonText = 'Printing';
+        }
       });
   }
 
@@ -68,12 +81,6 @@ export class ShowWikibookComponent implements OnInit {
 
     this.wikibookgenService.print(uuid, format)
       .subscribe((r:any) => {
-        if (format == 'epub') {
-          this.epubPrintButtonText = 'Done';
-        }
-        if (format == 'pdf') {
-          this.pdfPrintButtonText = 'Done';
-        }
         this.getAvailableDownloadFormat(uuid);
       });
 

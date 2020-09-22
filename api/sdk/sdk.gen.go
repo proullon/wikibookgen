@@ -237,7 +237,7 @@ func GetWikibook(uuid_ string) (wikibook *Wikibook, err error) {
 }
 
 // GetAvailableDownloadFormat : GET /wikibook/{uuid}/download/format
-func GetAvailableDownloadFormat(uuid_ string) (epub bool, pdf bool, err error) {
+func GetAvailableDownloadFormat(uuid_ string) (epub string, pdf string, err error) {
 
 	in := &GetAvailableDownloadFormatRequest{
 		Uuid: uuid_,
@@ -545,8 +545,8 @@ type GetAvailableDownloadFormatRequest struct {
 }
 
 type GetAvailableDownloadFormatResponse struct {
-	Epub bool `json:"epub"`
-	Pdf  bool `json:"pdf"`
+	Epub string `json:"epub"`
+	Pdf  string `json:"pdf"`
 }
 
 type PrintWikibookRequest struct {

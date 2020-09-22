@@ -91,8 +91,8 @@ export class GetAvailableDownloadFormatRequest {
 }
 
 export class GetAvailableDownloadFormatResponse {
-  epub: boolean;
-  pdf: boolean;
+  epub: string;
+  pdf: string;
 }
 
 export class PrintWikibookRequest {

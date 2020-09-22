@@ -272,27 +272,38 @@ func (wg *WikibookGen) Download(id string, format string, w http.ResponseWriter)
 	return nil
 }
 
-func (wg *WikibookGen) AvailableFormat(id string) (epub bool, pdf bool, err error) {
+func (wg *WikibookGen) AvailableFormat(id string) (epub string, pdf string, err error) {
 	var reader io.ReadCloser
+
+	epub = NOTFOUND
+	pdf = NOTFOUND
 
 	_, err = wg.Load(id)
 	if err != nil {
-		return false, false, err
+		return epub, pdf, err
+	}
+
+	// check if wikibook is printing
+	reader, err = wg.gen.Open(id, `yml`)
+	if err == nil {
+		log.Infof("Wikibook %s printing process already started", id)
+		reader.Close()
+		return PRINTING, PRINTING, nil
 	}
 
 	reader, err = wg.gen.Open(id, `epub`)
 	if err == nil {
-		epub = true
+		epub = EXISTS
 		reader.Close()
 	}
 
 	reader, err = wg.gen.Open(id, `pdf`)
 	if err == nil {
-		pdf = true
+		pdf = EXISTS
 		reader.Close()
 	}
 
-	log.Infof("Wikibook %s. epub:%t pdf:%t", id, epub, pdf)
+	log.Infof("Wikibook %s. epub:%s pdf:%s", id, epub, pdf)
 
 	return epub, pdf, nil
 }
@@ -313,7 +324,7 @@ func (wg *WikibookGen) PrintWikibook(id string, format string) error {
 		return nil
 	}
 
-	go wg.gen.Print(w)
+	wg.gen.Print(w)
 
 	return nil
 }

@@ -164,8 +164,8 @@ message GetAvailableDownloadFormatRequest {
 }
 
 message GetAvailableDownloadFormatResponse {
-  bool epub = 1;
-  bool pdf = 2;
+  string epub = 1;
+  string pdf = 2;
 }
 
 message PrintWikibookRequest {

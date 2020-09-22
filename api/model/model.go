@@ -64,6 +64,12 @@ type Editor interface {
 	Version() string
 }
 
+const (
+	NOTFOUND string = "notfound"
+	PRINTING string = "printing"
+	EXISTS   string = "exists"
+)
+
 type JobStatus string
 
 const (
