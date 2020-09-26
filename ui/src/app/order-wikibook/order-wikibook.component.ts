@@ -12,6 +12,11 @@ interface Language {
   viewValue: string;
 }
 
+interface Format {
+  value: string;
+  viewValue: string;
+}
+
 
 @Component({
   selector: 'app-order-wikibook',
@@ -22,11 +27,15 @@ export class OrderWikibookComponent implements OnInit {
   myControl = new FormControl();
   filteredOptions$: Observable<string[]>;
   selectedLanguage: string;
-  model: string;
+  selectedFormat: string;
 
   langs: Language[] = [
     {value: 'en', viewValue: 'English'},
     {value: 'fr', viewValue: 'Français'}
+  ];
+  formats: Format[] = [
+    {value: 'abstract', viewValue: 'Abstract (max 100 pages)'},
+    {value: 'tour', viewValue: 'Tour (max 500 pages)'}
   ];
 
   constructor(
@@ -34,7 +43,7 @@ export class OrderWikibookComponent implements OnInit {
     private location: Location,
   ) {
     this.selectedLanguage = 'en';
-    this.model = 'tour';
+    this.selectedFormat = 'abstract';
   }
   
   ngOnInit(): void {
@@ -50,7 +59,7 @@ export class OrderWikibookComponent implements OnInit {
 
   public orderWikibook() {
     console.log("Ordering " + this.myControl.value);
-    this.wikibookgenService.order(this.myControl.value, this.selectedLanguage, this.model)
+    this.wikibookgenService.order(this.myControl.value, this.selectedLanguage, this.selectedFormat)
       .subscribe((orderID: string) => {
         console.log('wikibook order ' + orderID + ' generating, redirecting...');
         this.location.go('/wikibook/order/'+ orderID, '', null);

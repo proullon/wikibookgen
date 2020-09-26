@@ -4,10 +4,19 @@
 
 <form class="order-form">
   <p><mat-form-field>
-    <mat-label>Favorite lang</mat-label>
+    <mat-label>Language</mat-label>
     <mat-select [(ngModel)]="selectedLanguage" name="lang">
       <mat-option *ngFor="let lang of langs" [value]="lang.value">
         {{lang.viewValue}}
+      </mat-option>
+    </mat-select>
+  </mat-form-field></p>
+
+  <p><mat-form-field>
+    <mat-label>Format</mat-label>
+    <mat-select [(ngModel)]="selectedFormat" name="format">
+      <mat-option *ngFor="let format of formats" [value]="format.value">
+        {{format.viewValue}}
       </mat-option>
     </mat-select>
   </mat-form-field></p>
