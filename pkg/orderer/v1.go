@@ -58,6 +58,7 @@ func (o *V1) GenTour(l Loader, j Job, g graph.Directed, cluster *Cluster) (*Wiki
 		Language: j.Language,
 		Subject:  j.Subject,
 		Title:    j.Subject,
+		Model:    j.Model,
 	}
 
 	v, pages, err := o.VolumeThis(l, j, g, cluster)

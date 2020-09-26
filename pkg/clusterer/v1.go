@@ -37,7 +37,7 @@ func (c *V1) Cluster(j Job, rootID int64, g graph.Directed) (*Cluster, error) {
 	switch Model(j.Model) {
 	case ABSTRACT:
 		layer = 2
-		maxtime = 5 * time.Minute
+		maxtime = 30 * time.Minute
 		maxpages = 100
 		maxchapters = 10
 	case TOUR:
