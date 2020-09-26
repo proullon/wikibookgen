@@ -129,27 +129,30 @@ This is a chapter beginning.
 */
 
 type i18n struct {
-	VolumeTitleFmt     string
-	ChapterTitleFmt    string
-	File               string
-	SeeAlso            string
-	NotesAndReferences string
+	AbstractVolumeTitleFmt string
+	TourVolumeTitleFmt     string
+	ChapterTitleFmt        string
+	File                   string
+	SeeAlso                string
+	NotesAndReferences     string
 }
 
 var langmap map[string]i18n = map[string]i18n{
 	"en": {
-		VolumeTitleFmt:     "Tour of %s",
-		ChapterTitleFmt:    "Chapter %d: %s",
-		File:               "File",
-		SeeAlso:            "See also",
-		NotesAndReferences: "References",
+		TourVolumeTitleFmt:     "Tour of %s",
+		AbstractVolumeTitleFmt: "An overview of %s",
+		ChapterTitleFmt:        "Chapter %d: %s",
+		File:                   "File",
+		SeeAlso:                "See also",
+		NotesAndReferences:     "References",
 	},
 	"fr": {
-		VolumeTitleFmt:     "%s en long, en large et en travers",
-		ChapterTitleFmt:    "Chapitre %d: %s",
-		File:               "Fichier",
-		SeeAlso:            "Voir aussi",
-		NotesAndReferences: "Notes et références",
+		TourVolumeTitleFmt:     "%s en long, en large et en travers",
+		AbstractVolumeTitleFmt: "Aperçu de %s",
+		ChapterTitleFmt:        "Chapitre %d: %s",
+		File:                   "Fichier",
+		SeeAlso:                "Voir aussi",
+		NotesAndReferences:     "Notes et références",
 	},
 }
 
@@ -175,10 +178,14 @@ func (e *V1) Edit(l Loader, w *Wikibook) error {
 		return fmt.Errorf("Edit: Wikibook language not set")
 	}
 
-	w.Title = WikibookTitle(w.Language, w.Subject)
+	if w.Model == `` {
+		return fmt.Errorf("Edit: Wikibook model not set")
+	}
+
+	w.Title = WikibookTitle(w.Language, w.Subject, w.Model)
 
 	for _, v := range w.Volumes {
-		v.Title = WikibookTitle(w.Language, w.Subject)
+		v.Title = WikibookTitle(w.Language, w.Subject, w.Model)
 
 		for i, c := range v.Chapters {
 			c.Title = ChapterTitle(w.Language, i+1, c.Title)
@@ -695,9 +702,17 @@ func NotesAndReferences(lang string) string {
 	return langmap[lang].NotesAndReferences
 }
 
-func WikibookTitle(lang string, subject string) string {
-	log.Debugf(`Exec '%s' '%s'`, langmap[lang].VolumeTitleFmt, subject)
-	return fmt.Sprintf(langmap[lang].VolumeTitleFmt, subject)
+func WikibookTitle(lang string, subject string, format string) string {
+	var titlefmt string
+	switch format {
+	case string(ABSTRACT):
+		titlefmt = langmap[lang].AbstractVolumeTitleFmt
+	default:
+		titlefmt = langmap[lang].TourVolumeTitleFmt
+	}
+
+	log.Debugf(`Exec '%s' '%s'`, titlefmt, subject)
+	return fmt.Sprintf(titlefmt, subject)
 }
 
 func ChapterTitle(lang string, index int, subject string) string {
