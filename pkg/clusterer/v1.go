@@ -32,18 +32,24 @@ func (c *V1) MaxSize(j Job) int64 {
 // Now since it's a dumb V1, all it does is remove vertices with low trail count
 func (c *V1) Cluster(j Job, rootID int64, g graph.Directed) (*Cluster, error) {
 
-	var layer int
+	var layer, maxpages, maxchapters int
 	var maxtime time.Duration
 	switch Model(j.Model) {
 	case ABSTRACT:
 		layer = 2
 		maxtime = 5 * time.Minute
+		maxpages = 100
+		maxchapters = 10
 	case TOUR:
 		layer = 2
 		maxtime = 60 * time.Minute
+		maxpages = 500
+		maxchapters = 50
 	case ENCYCLOPEDIA:
 		layer = 3
 		maxtime = 120 * time.Minute
+		maxpages = 10000
+		maxchapters = 1000
 	}
 
 	graphsize := g.Nodes().Len()
@@ -112,7 +118,7 @@ func (c *V1) Cluster(j Job, rootID int64, g graph.Directed) (*Cluster, error) {
 		for i := maxidx; i > 2; i-- {
 			components := componentmap[i]
 			for _, component := range components {
-				if pagecount > 750 || chaptercount > 75 {
+				if pagecount > maxpages || chaptercount > maxchapters {
 					break
 				}
 				for id, n := range component {
