@@ -183,9 +183,11 @@ func (e *V1) Edit(l Loader, w *Wikibook) error {
 		for i, c := range v.Chapters {
 			c.Title = ChapterTitle(w.Language, i+1, c.Title)
 
-			for x, a := range c.Articles {
-				a.Title = fmt.Sprintf(`%d.%-2d %s`, i+1, x+1, a.Title)
-			}
+			/*
+				for x, a := range c.Articles {
+					a.Title = fmt.Sprintf(`%d.%-2d %s`, i+1, x+1, a.Title)
+				}
+			*/
 		}
 	}
 

@@ -77,7 +77,8 @@ func (o *V1) VolumeThis(l Loader, j Job, g graph.Directed, cluster *Cluster) (*V
 	for _, cluster := range cluster.Subclusters {
 		c, err := o.ChapterThis(l, g, cluster)
 		if err != nil {
-			return nil, 0, err
+			log.Errorf(`Cannot create chapter from cluster %+v: %s`, cluster, err)
+			continue
 		}
 		pages += len(c.Articles)
 
@@ -93,8 +94,8 @@ func (o *V1) ChapterThis(l Loader, g graph.Directed, cluster *Cluster) (*Chapter
 	center := o.Center(g, cluster)
 	title, err := l.Title(center)
 	if err != nil {
-		//return nil, fmt.Errorf("ChapterTitle(%d): %s", center, err)
-		title = fmt.Sprintf("ChapterTitle(%d): %s", center, err)
+		return nil, fmt.Errorf("ChapterTitle(%d): %s", center, err)
+		//title = fmt.Sprintf("ChapterTitle(%d): %s", center, err)
 	}
 	c.Title = title
 
