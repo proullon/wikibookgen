@@ -1,6 +1,6 @@
 # Accept the Go version for the image to be set as a build argument.
-# Default to Go 1.13
-ARG GO_VERSION=1.13
+# Default to Go 1.18
+ARG GO_VERSION=1.18
 
 # First stage: build the executable.
 FROM golang:${GO_VERSION} AS builder
@@ -31,10 +31,10 @@ RUN go build \
     mv app /app
 
 # Final stage: the running container.
-FROM debian:stretch AS final
+FROM debian:stable AS final
 
 # pandoc to export books as epub and pdf
-RUN apt-get update && apt-get install -y pandoc wget texlive-xetex texlive-math-extra librsvg2-bin
+RUN apt-get update && apt-get install -y pandoc wget texlive-xetex texlive-science texlive-science-doc librsvg2-bin
 RUN apt-get install -y texlive-full texlive-luatex
 RUN wget https://github.com/jgm/pandoc/releases/download/2.10.1/pandoc-2.10.1-1-amd64.deb
 RUN dpkg -i pandoc-2.10.1-1-amd64.deb
